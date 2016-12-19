@@ -1,3 +1,5 @@
 bottle==0.12.11
 freeze==1.0.10
+Jinja2==2.8
+MarkupSafe==0.23
 six==1.10.0
