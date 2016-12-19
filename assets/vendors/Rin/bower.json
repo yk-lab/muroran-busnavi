@@ -1,0 +1,47 @@
+{
+  "name": "Rin",
+  "description": "Rin is one of the Bootstrap original theme (based on Honoka).",
+  "keywords": [
+    "css",
+    "sass",
+    "bootstrap",
+    "japanese",
+    "theme",
+    "responsive",
+    "front-end",
+    "framework",
+    "web",
+    "lovelive"
+  ],
+  "author": "raryosu",
+  "homepage": "http://rinhoshizo.la/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/raryosu/Rin.git"
+  },
+  "license": "MIT",
+  "moduleType": "globals",
+  "main": [
+    "dist/css/bootstrap.min.css"
+  ],
+  "ignore": [
+    "/.*",
+    "dist/assets",
+    "dist/*.html",
+    "src",
+    "CNAME"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "bootstrap": "3.3.7",
+    "bootstrap-sass": "3.3.7"
+  },
+  "exportsOverride": {
+    "bootstrap-sass": {},
+    "bootstrap": {
+      "js": "dist/js/bootstrap.**js",
+      "fonts": "dist/fonts/**/*"
+    },
+    "jquery": {}
+  }
+}
