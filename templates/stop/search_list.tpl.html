@@ -1,0 +1,45 @@
+{% extends "layout.tpl.html" %}
+{% block head_scripts %}
+  {# <script type="text/javascript" src="/static/js/stop_search.js"></script> #}
+{% endblock %}
+{% block content %}
+  <section class="container">
+    <div class="page-header">
+      <h1 style="display:inline">バス停検索</h1>
+      <form action="/stops/search/" method="get" class="form-inline pull-right">
+        <div class="form-group">
+          <input type="text" name="q" value="{{ query }}" class="form-control"/>
+        </div>
+        <button type="submit" class="btn btn-default">検索</button>
+      </form>
+    </div>
+  </section>
+  <section class="section section-default">
+  	<div class="container">
+  		<div class="row">
+  			<div class="col-xs-12">
+          <ul class="stop-list list-group">
+            {% for stopname in stopnames %}
+              <li class="list-group-item">
+                <a href="/stops/{{ stopname.stop.id }}">
+                  <div class="panel-body">
+                    {% if stopname.name != stopname.stop.now_name().name %}
+                      <p>旧名 {{ stopname.name }} でヒットしました</p>
+                    {% endif %}
+                    {% if stopname.stop.now_name() %}
+                      {{ stopname.stop.now_name().name }}
+                    {% else %}
+                      <em>すでに廃止されています</em>
+                    {% endif %}
+                  </div>
+                </a>
+              </li>
+            {% else %}
+              <li><em>no stop found</em></li>
+            {% endfor %}
+          </ul>
+        </div>
+  		</div>
+  	</div>
+  </section>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "layout.tpl.html" %}
+{% block content %}
+  <section class="container">
+    <div class="page-header">
+      <h1>
+        {% if stop.now_name() %}
+          {{ stop.now_name().name }}
+        {% else %}
+          <em>すでに廃止されています</em>
+        {% endif %}
+      </h1>
+    </div>
+  </section>
+  <section class="section section-default">
+  	<div class="container">
+  		<div class="row">
+        <div class="col-xs-12">
+          <div id="GoogleMapStopDetails"></div>
+        </div>
+  		</div>
+  	</div>
+  </section>
+  <section class="section section-default">
+  	<div class="container">
+  		<div class="row">
+        <div class="col-xs-12">
+          <h2>近隣の駅・停留所</h2>
+          登録されているもののみを表示します。
+          <ul class="stop-list list-group">
+          </ul>
+        </div>
+  		</div>
+  	</div>
+  </section>
+{% endblock %}
+{% block footer_scripts %}
+<script>
+  function initMap() {
+    var stops = [
+      {%- for position in stop.positions -%}
+        {%- if position.availability() %}
+          {Title: "{{ stop.now_name().name }}", LatLng:{lat: {{ position.lat }}, lng: {{ position.lng }}}},
+        {%- endif -%}
+      {%- endfor %}
+    ];
+
+    var center = {lat: 0, lng: 0};
+
+    // Create a map object and specify the DOM element for display.
+
+    stops.forEach(function(stop, i, a){
+      center.lat += stop.LatLng.lat;
+      center.lng += stop.LatLng.lng;
+    });
+
+    center.lat /= stops.length;
+    center.lng /= stops.length;
+
+    var map = new google.maps.Map(document.getElementById('GoogleMapStopDetails'), {
+      center: center,
+      scrollwheel: false,
+      zoom: 17
+    });
+
+    // Create a marker and set its position.
+    stops.forEach(function(stop, i, a){
+      new google.maps.Marker({
+        map: map,
+        position: stop.LatLng,
+        title: stop.Title
+      });
+    });
+  }
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9Mpuf4zHL1O_4RzrnNCz2GPc7YVUVdDU&callback=initMap" async defer></script>
+{% endblock %}

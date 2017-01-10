@@ -1,0 +1,24 @@
+{
+  "name": "bus-navi",
+  "version": "1.0.0",
+  "description": "むろらんバスなび",
+  "main": "index.js",
+  "dependencies": {
+    "@types/backbone": "^1.3.33",
+    "@types/jquery": "^2.0.39",
+    "@types/react": "^0.14.55",
+    "@types/react-dom": "^0.14.20",
+    "bower": "^1.8.0",
+    "grunt-cli": "^1.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@gitlab2.yk-lab.net:2222/MuroranBusNavi/WebRenewal.git"
+  },
+  "author": "",
+  "license": "ISC"
+}
