@@ -26,7 +26,7 @@ app = bottle.Bottle()
 # それまでは直書き（時間があれば要改善）
 app.config['SECRET_KEY'] = '9fpxcp7h'
 app.config['DEBUG']   = True
-app.config['RELOAD']  = False
+app.config['RELOAD']  = True
 app.config['BOTTLE_CHILD']   = True
 app.config['DB.URL']   = 'mysql://bus_navi:bus_navi@db/bus_navi?charset=utf8mb4'
 app.config['DB.ECHO']   = True
@@ -116,6 +116,25 @@ def stop_detail(id, db):
         return template('stop/details.tpl.html', stop=stop, autoescape=True)
     return HTTPError(404, 'Stop not found.')
 
+@app.route('/stop_times/')
+def stop_times(db):
+    if request.params.f_id and request.params.t_id:
+        return "True"
+    elif not request.params.from_q or not request.params.to_q:
+      response.status = 302
+      redirect_url = '{0}://{1}/'.format(
+                      request.urlparts.scheme, request.urlparts.netloc)
+      response.set_header('Location', redirect_url)
+    elif request.params.f_id and not request.params.t_id:
+        # select t_id
+        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.to_q)).all()
+        return template('stop_times/select_stop.tpl.html', params = request.params, stopnames=stopnames, autoescape=True)
+    elif not request.params.f_id:
+        # select f_id
+        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).all()
+        return template('stop_times/select_stop.tpl.html', params = request.params, stopnames=stopnames, autoescape=True)
+    return "False"
+
 # Routing /admin
 @app.route('/admin/stop/')
 def admin_stop():
@@ -130,8 +149,8 @@ def admin_stop_add():
     return HTTPError(404, 'page not found.')
 
 
-if app.config.get('RELOAD', False):
-    print("Reload: true")
-    app.run(host='0.0.0.0', port=8080, reload=True)
-else:
-    app.run(host='0.0.0.0', port=8080)
+#if app.config.get('RELOAD'):
+print("Reload: true")
+app.run(host='0.0.0.0', port=8080, reload=True, reloader=True)
+#else:
+#    app.run(host='0.0.0.0', port=8080)

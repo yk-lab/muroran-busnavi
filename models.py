@@ -1,7 +1,7 @@
 from bottle import request
 from bottle.ext import sqlalchemy
 from sqlalchemy import create_engine
-from sqlalchemy import Column, DateTime, String, Unicode, Integer, BigInteger, Float, DECIMAL, ForeignKey, func, or_, desc
+from sqlalchemy import Column, Date, DateTime, String, Unicode, Boolean, Integer, BigInteger, Float, DECIMAL, ForeignKey, func, or_, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,6 +9,7 @@ from datetime import datetime
 import uuid
 import pygeohash as geohash
 import mercantile
+import re
 
 Base = declarative_base()
 
@@ -315,15 +316,176 @@ class UserPermission(Base):
     def permitted_stop_update(self):
         return True if (get_permission & (PERMIT_UPDATE << _shift(STOP_PERMISSION))) != 0 else False
 
+class Route(Base):
+    __tablename__ = 'routes'
+    id               = Column(String(32), primary_key=True)
+    agency_code      = Column(String(32), ForeignKey('companies.id'), nullable=False)
+    route_short_name = Column(Unicode(255), index=True)
+    route_long_name  = Column(Unicode(255), index=True)
+    route_desc       = Column(Unicode(255), index=True)
+    route_type       = Column(Integer, nullable=False, index=True)
+    route_url        = Column(Unicode(255))
+    route_color      = Column(Unicode(255))
+    route_text_color = Column(Unicode(255))
+    id_prefix        = Column(String(255), index=True)
+    route_id         = Column(String(255), index=True)
+    registered_on    = Column(DateTime, nullable=False, index=True)
 
-# c3v1oFM08IdLKQUiBFxoT7pT5BS2
+    def __init__(self, agency_code,
+            route_short_name, route_long_name, route_desc,
+            route_type, route_url, route_color, route_text_color,
+            id_prefix, route_id):
+        self.id = uuid.uuid4().hex
+        self.agency_code = agency_code
+        self.route_short_name = agency_code
+        self.route_long_name = route_long_name
+        self.route_desc = route_desc
+        self.route_type = route_type
+        self.route_url = route_url
+        self.route_color = route_color
+        self.route_text_color = route_text_color
+        self.id_prefix = id_prefix
+        self.route_id = route_id
+        self.registered_on = datetime.utcnow()
 
-'''
-class Route():
+class Trip(Base):
+    __tablename__ = 'trips'
+    id               = Column(String(32), primary_key=True)
+    route_code       = Column(String(32), ForeignKey('routes.id'), nullable=False)
+    service_code     = Column(String(32), ForeignKey('service_id.id'), nullable=False)
+    trip_headsign    = Column(Unicode(255), index=True)
+    trip_short_name  = Column(Unicode(255), index=True)
+    direction_id     = Column(String(255), index=True)
+    block_id         = Column(String(32), index=True)
+    shape_code       = Column(String(32), index=True)
+    id_prefix        = Column(String(255), index=True)
+    trip_id          = Column(String(255), index=True)
+    registered_on    = Column(DateTime, nullable=False, index=True)
+
+    def __init__(self, route_code, service_code,
+            trip_headsign, trip_short_name,
+            direction_id, block_id, shape_code,
+            id_prefix, route_id):
+        self.id = uuid.uuid4().hex
+        self.route_code = route_code
+        self.service_code = service_code
+        self.trip_headsign = trip_headsign
+        self.trip_short_name = trip_short_name
+        self.direction_id = direction_id
+        self.block_id = block_id
+        self.shape_code = shape_code
+        self.id_prefix = id_prefix
+        self.route_id = route_id
+        self.registered_on = datetime.utcnow()
+
+class ServiceID(Base):
+    __tablename__ = 'service_id'
+    id               = Column(String(32), primary_key=True)
+    id_prefix        = Column(String(255), index=True)
+    service_id       = Column(String(255), index=True)
+    registered_on    = Column(DateTime, nullable=False, index=True)
+
+    def __init__(self, id_prefix, service_id):
+        self.id = uuid.uuid4().hex
+        self.id_prefix = id_prefix
+        self.route_id = route_id
+        self.registered_on = datetime.utcnow()
+
+class Service(Base):
+    __tablename__ = 'service'
+    id            = Column(String(32), primary_key=True)
+    service_code  = Column(String(32), ForeignKey('service_id.id'), nullable=False)
+    monday        = Column(Boolean, nullable=False, index=True)
+    tuesday       = Column(Boolean, nullable=False, index=True)
+    wednesday     = Column(Boolean, nullable=False, index=True)
+    thursday      = Column(Boolean, nullable=False, index=True)
+    friday        = Column(Boolean, nullable=False, index=True)
+    saturday      = Column(Boolean, nullable=False, index=True)
+    sunday        = Column(Boolean, nullable=False, index=True)
+    start_date    = Column(DateTime, nullable=False, index=True)
+    end_date      = Column(DateTime, nullable=False, index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
+
+    def __init__(self, service_code,
+            monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+            start_date, end_date):
+        self.id = uuid.uuid4().hex
+        self.service_code  = service_code
+        self.monday        = monday
+        self.tuesday       = tuesday
+        self.wednesday     = wednesday
+        self.thursday      = thursday
+        self.friday        = friday
+        self.saturday      = saturday
+        self.sunday        = sunday
+        self.start_date    = start_date
+        self.end_date      = end_date
+        self.registered_on = datetime.utcnow()
 
 
-class Trip():
+class ServiceDate(Base):
+    __tablename__ = 'service_dates'
+    id             = Column(String(32), primary_key=True)
+    service_code   = Column(String(32), ForeignKey('service_id.id'), nullable=False)
+    date           = Column(Date, nullable=False, index=True)
+    timezone       = Column(String(255), nullable=False, index=True)
+    exception_type = Column(Boolean, nullable=False, index=True)
+    registered_on  = Column(DateTime, nullable=False, index=True)
 
+    def __init__(self, service_code, date, exception_type):
+        self.id = uuid.uuid4().hex
+        self.service_code = service_code
+        self.date = date
+        self.exception_type = exception_type
+        self.registered_on = datetime.utcnow()
 
-class StopTime():
-'''
+class StopTime(Base):
+    __tablename__ = 'stop_times'
+    id                  = Column(String(32), primary_key=True)
+    trip_code           = Column(String(32), ForeignKey('trips.id'), nullable=False)
+    arrival_time        = Column(Integer, nullable=False, index=True)
+    departure_time      = Column(Integer, nullable=False, index=True)
+    tz                  = Column(String(255), index=True)
+    stop_code           = Column(String(32), nullable=False, index=True)
+    stop_sequence       = Column(Integer, nullable=False, index=True)
+    stop_headsign       = Column(Unicode(255), index=True)
+    pickup_type         = Column(Integer, server_default='0', nullable=False, index=True)
+    drop_off_type       = Column(Integer, server_default='0', nullable=False, index=True)
+    shape_dist_traveled = Column(String(32), index=True)
+    registered_on       = Column(DateTime, nullable=False, index=True)
+
+    def __init__(self, trip_code,
+            arrival_time, departure_time, tz,
+            stop_code, stop_sequence, stop_headsign,
+            pickup_type, drop_off_type, shape_dist_traveled, ):
+        self.id = uuid.uuid4().hex
+        self.trip_code = trip_code
+        if arrival_time.isdigit():
+            self.arrival_time = arrival_time
+        elif re.match(r"(\d+):(\d+):(\d+)", arrival_time):
+            m = re.match(r"(\d+):(\d+):(\d+)", arrival_time)
+            time = [i for i in map(int, m.groups())]
+            self.arrival_time = time[0] * 3600 + time[1] * 60 + time[2]
+        elif re.match(r"(\d+):(\d+)", arrival_time):
+            m = re.match(r"(\d+):(\d+)", arrival_time)
+            time = [i for i in map(int, m.groups())]
+            self.arrival_time = time[0] * 3600 + time[1] * 60
+        if departure_time.isdigit():
+            self.departure_time = departure_time
+        elif re.match(r"(\d+):(\d+):(\d+)", departure_time):
+            m = re.match(r"(\d+):(\d+):(\d+)", departure_time)
+            time = [i for i in map(int, m.groups())]
+            self.departure_time = time[0] * 3600 + time[1] * 60 + time[2]
+        elif re.match(r"(\d+):(\d+)", departure_time):
+            m = re.match(r"(\d+):(\d+)", departure_time)
+            time = [i for i in map(int, m.groups())]
+            self.departure_time = time[0] * 3600 + time[1] * 60
+        self.tz = tz
+        self.id_prefix = id_prefix
+        self.stop_code = stop_code
+        self.stop_sequence = stop_sequence
+        self.stop_headsign = stop_headsign
+        self.pickup_type = pickup_type
+        self.drop_off_type = drop_off_type
+        self.shape_dist_traveled = shape_dist_traveled
+        self.registered_on = datetime.utcnow()
