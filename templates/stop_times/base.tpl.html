@@ -1,0 +1,58 @@
+{% extends "layout.tpl.html" %}
+{% block css_files %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/air-datepicker/2.2.3/css/datepicker.min.css"/>
+{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="page-header">
+    <h1>時刻表検索</h1>
+    <form action="/stop_times/" method="get" class="form-inline">
+      <div class="form-group">
+          <input type="text" name="from_q" value="{{ params.from_q }}" class="form-control"/>
+          <a href="/stop_times/?from_q={{ params.to_q }}&to_q={{ params.from_q }}&f_id={{ params.t_id }}&t_id={{ params.f_id }}">⇄</a>
+          <input type="text" name="to_q" value="{{ params.to_q }}" class="form-control"/>
+      </div>
+      <div class="form-group">
+          <input type="date" class="form-control" name="day" value="{{ params.day }}"/>
+          <input type="time" class="form-control" name="time" step="600" value="{{ params.time }}"/>
+      </div>
+      <button type="submit" class="btn btn-default">検索</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{# % block footer_scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/air-datepicker/2.2.3/js/datepicker.min.js"></script>
+    <script>
+    !function(a){
+        a.fn.datepicker.language.ja={
+            days:["日曜日","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日"],
+            daysShort:["日曜","月曜","火曜","水曜","木曜","金曜","土曜"],
+            daysMin:["日","月","火","水","木","金","土"],
+            months:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
+            monthsShort:["1","2","3","4","5","6","7","8","9","10","11","12"],
+            today:"今日",clear:"クリア",dateFormat:"yyyy/mm/dd",timeFormat:"hh:ii",firstDay:0
+        }
+    }(jQuery);
+    $('#stoptime_date_picker').datepicker({
+        language: 'ja',
+        todayButton: new Date(),
+        clearButton: true,
+        autoClose: true,
+        onShow: function(dp, animationCompleted){
+            if (!animationCompleted) {
+                log('start showing')
+            } else {
+                log('finished showing')
+            }
+        },
+        onHide: function(dp, animationCompleted){
+            if (!animationCompleted) {
+                log('start hiding')
+            } else {
+                log('finished hiding')
+            }
+        }
+    })
+    </script>
+{% endblock % #}

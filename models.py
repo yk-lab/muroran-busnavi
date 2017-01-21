@@ -1,7 +1,7 @@
 from bottle import request
 from bottle.ext import sqlalchemy
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Date, DateTime, String, Unicode, Boolean, Integer, BigInteger, Float, DECIMAL, ForeignKey, func, or_, desc
+from sqlalchemy import Column, Date, DateTime, String, Unicode, Boolean, Integer, BigInteger, Float, DECIMAL, ForeignKey, func, or_, desc, SmallInteger
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,6 +12,11 @@ import mercantile
 import re
 
 Base = declarative_base()
+
+def Page():
+    def __init__(self, **kwargs):
+        self.title = kwargs.get('title', "Not Defined")
+        self.discription = kwargs.get('discription', None)
 
 def db_init(app):
     engine = create_engine(
@@ -362,6 +367,9 @@ class Trip(Base):
     trip_id          = Column(String(255), index=True)
     registered_on    = Column(DateTime, nullable=False, index=True)
 
+    route = relationship("Route", backref="trip")
+
+
     def __init__(self, route_code, service_code,
             trip_headsign, trip_short_name,
             direction_id, block_id, shape_code,
@@ -377,6 +385,10 @@ class Trip(Base):
         self.id_prefix = id_prefix
         self.route_id = route_id
         self.registered_on = datetime.utcnow()
+
+    def __repr__(self):
+        return "<Trip('%s')>" % (self.id)
+
 
 class ServiceID(Base):
     __tablename__ = 'service_id'
@@ -422,14 +434,13 @@ class Service(Base):
         self.end_date      = end_date
         self.registered_on = datetime.utcnow()
 
-
 class ServiceDate(Base):
     __tablename__ = 'service_dates'
     id             = Column(String(32), primary_key=True)
     service_code   = Column(String(32), ForeignKey('service_id.id'), nullable=False)
     date           = Column(Date, nullable=False, index=True)
     timezone       = Column(String(255), nullable=False, index=True)
-    exception_type = Column(Boolean, nullable=False, index=True)
+    exception_type = Column(SmallInteger, nullable=False, index=True)
     registered_on  = Column(DateTime, nullable=False, index=True)
 
     def __init__(self, service_code, date, exception_type):
@@ -446,13 +457,16 @@ class StopTime(Base):
     arrival_time        = Column(Integer, nullable=False, index=True)
     departure_time      = Column(Integer, nullable=False, index=True)
     tz                  = Column(String(255), index=True)
-    stop_code           = Column(String(32), nullable=False, index=True)
+    stop_code           = Column(String(32), ForeignKey('stop_positions.id'), nullable=False)
     stop_sequence       = Column(Integer, nullable=False, index=True)
     stop_headsign       = Column(Unicode(255), index=True)
     pickup_type         = Column(Integer, server_default='0', nullable=False, index=True)
     drop_off_type       = Column(Integer, server_default='0', nullable=False, index=True)
     shape_dist_traveled = Column(String(32), index=True)
     registered_on       = Column(DateTime, nullable=False, index=True)
+
+    position = relationship("StopPosition", backref="stop_time")
+    trip = relationship("Trip", backref="stop_time")
 
     def __init__(self, trip_code,
             arrival_time, departure_time, tz,
@@ -489,3 +503,6 @@ class StopTime(Base):
         self.drop_off_type = drop_off_type
         self.shape_dist_traveled = shape_dist_traveled
         self.registered_on = datetime.utcnow()
+
+    def __repr__(self):
+        return "<StopTime('%s')>" % (self.id)

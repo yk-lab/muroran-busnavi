@@ -1,0 +1,59 @@
+{% macro to_hhmmss(t) -%}
+{%- set ss = (t % 60) | int %}
+{%- set mm = (((t-ss)/60) % 60) | int %}
+{%- set hh = ((t-mm*60-ss)/3600) | int %}
+{{- "%d:%02d"|format(hh, mm) }}
+{%- endmacro %}
+
+{% extends "stop_times/base.tpl.html" %}
+{% block head_scripts %}
+{% endblock %}
+{% block content %}
+{{ super() }}
+<section class="section section-default">
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+      <ul class="stop-list list-group">
+        {% for stop_time in stop_times %}
+          <li class="list-group-item">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                  <time>{{ to_hhmmss(stop_time.from.departure_time) }}</time>発 - <time>{{ to_hhmmss(stop_time.to.arrival_time) }}</time>着
+                </h3>
+            </div>
+            <div class="panel-body">
+              <p>
+                {% if stop_time.from.trip.route.route_short_name %}
+                  [{{- stop_time.from.trip.route.route_short_name -}}]
+                {% endif %}
+                {{stop_time.from.trip.route.route_long_name}}
+                {% if stop_time.from.trip.route.route_desc %}
+                （{{stop_time.from.trip.route.route_desc}}）
+                {% endif %}
+              </p>
+              <p>
+                乗車: {{ stop_time.from.position.stop.name[0].name }}
+                →
+                下車: {{ stop_time.to.position.stop.name[0].name }}
+              </p>
+              <p>
+                  {% if stop_time.from.trip.service_code == "2ed19e8dd96311e6be760242ac130002" %}
+                    平日ダイヤ
+                  {% elif stop_time.from.trip.service_code == "699da47d347d47fe8939ea00bc81c7da" %}
+                    土日祝ダイヤ
+                  {% elif stop_time.from.trip.service_code == "9a4b3c04b572424489bea76952055d40" %}
+                    休校日運休
+                  {% endif %}
+              </p>
+            </div>
+          </li>
+        {% else %}
+          <li><em>no stop found</em></li>
+        {% endfor %}
+      </ul>
+    </div>
+		</div>
+	</div>
+</section>
+{% endblock %}

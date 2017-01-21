@@ -6,9 +6,10 @@ import bottle
 from bottle import HTTPError
 from bottle import static_file, get, post, request, response
 from bottle import TEMPLATE_PATH, jinja2_template as template
-from models import db_init, Company, CompanyName, Stop, StopName
+from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip
 from sqlalchemy import or_, desc
-from datetime import datetime
+from pytz import timezone
+from datetime import datetime, date, time
 from json_encoders import StopJSONEncoder
 import json
 
@@ -49,7 +50,16 @@ def static(filename):
 
 @app.route('/')
 def index():
-    return template('index.tpl.html', autoescape=True)
+    jst_now = datetime.now(timezone("Asia/Tokyo"))
+    return template(
+        'index.tpl.html',
+        page={
+            "title":"むろらんバスなび - 道南バス、室蘭市内のバス停・バス時刻案内",
+            "discription":"道南バスの室蘭市内線のバス停地図の表示やバスの時刻表検索を行えます。平日・土日祝日にダイヤ対応。"
+        },
+        params={"day": jst_now.date(), "time": "%d:%02d" % (jst_now.hour, jst_now.minute // 10 * 10)},
+        autoescape=True
+    )
 
 @app.route('/signin/')
 def login():
@@ -59,14 +69,10 @@ def login():
 def login_success():
     return template('login_success.tpl.html', autoescape=True)
 
-@app.route('/hello')
-def hello():
-    return "Hello World!"
-
 # Routing /Company
 @app.route('/company/')
 def company():
-    return "Hello World!"
+    return "Coming Soon!"
 
 @app.route('/company/<id>/')
 def company_detail(id, db):
@@ -79,7 +85,7 @@ def company_detail(id, db):
 # Routing /Company
 @app.route('/stops/')
 def stop():
-    return "Hello World!"
+    return "Comming Soon!"
 
 @app.route('/stops/:id')
 def stop_detail(id, db):
@@ -88,7 +94,11 @@ def stop_detail(id, db):
     print(stop)
     if format == "json":
         return "todo"
-    return template('stop/details.tpl.html', stop=stop, autoescape=True)
+    return template('stop/details.tpl.html',
+            page={
+                "title":stop.now_name().name + " - 駅・停留所 - むろらんバスなび",
+            },
+            stop=stop, autoescape=True)
 
 @app.route('/stops/search/')
 def stop_search(db):
@@ -106,20 +116,70 @@ def stop_search(db):
 #            return json.dumps([stop.to_dict() for stop in stops])
             return json.dumps([{"stopname_id": stopname.id, "stop": stopname.stop.to_dict()} for stopname in stopnames])
         return template('stop/search_list.tpl.html', query = query, stopnames=stopnames, autoescape=True)
-    return template('stop/search.tpl.html', autoescape=True)
-
-@app.route('/stops/<id>/')
-def stop_detail(id, db):
-    stops = db.query(Stop).filter_by(id = id).first()
-    if stops:
-        print(stop)
-        return template('stop/details.tpl.html', stop=stop, autoescape=True)
-    return HTTPError(404, 'Stop not found.')
+    return template('stop/search.tpl.html',
+                page={
+                    "title": "バス停検索 - むろらんバスなび",
+                },
+                autoescape=True)
 
 @app.route('/stop_times/')
 def stop_times(db):
     if request.params.f_id and request.params.t_id:
-        return "True"
+        dt_now = datetime.now(timezone('Asia/Tokyo'))
+        time_sec = -1
+        time_obj = time(hour=dt_now.hour, minute=dt_now.minute)
+        if request.params.time:
+            t = request.params.time.split(":")
+            if t[0] and t[1] and t[0].isdigit() and t[1].isdigit():
+                time_sec = int(t[0]) * 3600 + int(t[1]) * 60
+                time_obj = time(hour=int(t[0]), minute=int(t[1]), tzinfo=timezone('Asia/Tokyo'))
+        if not time and time < 0:
+            time_sec = dt_now.hour * 3600 + dt_now.minute * 60
+            # request.params.replace("time", "%d:%02d" % (dt_now.hour, dt_now.minute))
+
+        dt = datetime.now(timezone('Asia/Tokyo'))
+        if request.params.day:
+            d = request.params.day.split("-")
+            if d[0] and d[1] and d[2] and d[0].isdigit() and d[1].isdigit() and d[2].isdigit():
+                dt = datetime.combine(date(int(d[0]), int(d[1]), int(d[2])), time_obj)
+        # ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        a_service_dates = db.query(ServiceDate).filter(ServiceDate.date == dt.astimezone(timezone("Asia/Tokyo")).date())
+        if dt.weekday() == 0:
+            a_service_weekday = db.query(Service).filter(Service.monday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        elif dt.weekday() == 1:
+            a_service_weekday = db.query(Service).filter(Service.tuesday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        elif dt.weekday() == 2:
+            a_service_weekday = db.query(Service).filter(Service.wednesday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        elif dt.weekday() == 3:
+            a_service_weekday = db.query(Service).filter(Service.thursday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        elif dt.weekday() == 4:
+            a_service_weekday = db.query(Service).filter(Service.friday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        elif dt.weekday() == 5:
+            a_service_weekday = db.query(Service).filter(Service.saturday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+        else:
+            a_service_weekday = db.query(Service).filter(Service.sunday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+
+        a_service_code = {w.service_code: True for w in a_service_weekday}
+        for s in a_service_dates:
+            if s.exception_type == 2:
+                a_service_code[s.service_code] = False
+            elif s.exception_type == 1:
+                a_service_code[s.service_code] = True
+
+        trips = db.query(Trip.id).filter(Trip.service_code.in_([k for k, s in a_service_code.items() if s == True]))
+        f_stop_positions = db.query(StopPosition.id).filter(StopPosition.stop_code == request.params.f_id)
+        t_stop_positions = db.query(StopPosition.id).filter(StopPosition.stop_code == request.params.t_id)
+        f_stop_times = db.query(StopTime.trip_code).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code.in_(trips), StopTime.departure_time > time_sec)
+        t_stop_times = db.query(StopTime).filter(StopTime.stop_code.in_(t_stop_positions), StopTime.trip_code.in_(trips), StopTime.trip_code.in_(f_stop_times)).order_by(StopTime.departure_time).limit(15)
+
+        stop_times = list()
+        for t_stop_time in t_stop_times:
+            st = db.query(StopTime).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code == t_stop_time.trip_code, StopTime.stop_sequence < t_stop_time.stop_sequence).order_by(StopTime.stop_sequence.desc()).first()
+            if st != None and {"from": st, "to": t_stop_time} not in stop_times:
+#                print({"from": st, "to": t_stop_time})
+#                print(stop_times)
+                stop_times.append({"from": st, "to": t_stop_time})
+        return template('stop_times/list.tpl.html', stop_times = stop_times, params = request.params, autoescape=True)
     elif not request.params.from_q or not request.params.to_q:
       response.status = 302
       redirect_url = '{0}://{1}/'.format(
@@ -128,11 +188,11 @@ def stop_times(db):
     elif request.params.f_id and not request.params.t_id:
         # select t_id
         stopnames = db.query(StopName).filter(StopName.name.contains(request.params.to_q)).all()
-        return template('stop_times/select_stop.tpl.html', params = request.params, stopnames=stopnames, autoescape=True)
+        return template('stop_times/select_stop.tpl.html', params = request.params, select="t_id", stopnames=stopnames, request=request, autoescape=True)
     elif not request.params.f_id:
         # select f_id
         stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).all()
-        return template('stop_times/select_stop.tpl.html', params = request.params, stopnames=stopnames, autoescape=True)
+        return template('stop_times/select_stop.tpl.html', params = request.params, select="f_id", stopnames=stopnames, request=request, autoescape=True)
     return "False"
 
 # Routing /admin
