@@ -7,7 +7,7 @@ from bottle import HTTPError
 from bottle import static_file, get, post, request, response
 from bottle import TEMPLATE_PATH, jinja2_template as template
 from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip
-from sqlalchemy import or_, desc
+from sqlalchemy import or_, desc, func
 from pytz import timezone
 from datetime import datetime, date, time
 from json_encoders import StopJSONEncoder
@@ -107,7 +107,7 @@ def stop_search(db):
     if query != None and query != "":
         # stops = db.query(Stop).filter(Stop.id.in_(db.query(StopName, StopName.stop_code).filter(StopName.name.contains(query))))
         print("query: %s" % query)
-        stopnames = db.query(StopName).filter(StopName.name.contains(query)).all()
+        stopnames = db.query(StopName).filter(StopName.name.contains(query)).order_by(func.char_length(StopName.name))
 #        stopnames = db.query(StopName).filter(StopName.name.contains(query), StopName.application_start <= datetime.utcnow(), or_(StopName.application_end == None, StopName.application_end >= datetime.utcnow())).order_by(desc("stop_names.application_start")).all()
 #        stops = db.query(Stop).filter(Stop.id.in_([i.stop_code for i in stopnames])).all()
         print(stopnames)
@@ -187,11 +187,11 @@ def stop_times(db):
       response.set_header('Location', redirect_url)
     elif request.params.f_id and not request.params.t_id:
         # select t_id
-        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.to_q)).all()
+        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.to_q)).order_by(func.char_length(StopName.name))
         return template('stop_times/select_stop.tpl.html', params = request.params, select="t_id", stopnames=stopnames, request=request, autoescape=True)
     elif not request.params.f_id:
         # select f_id
-        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).all()
+        stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).order_by(func.char_length(StopName.name))
         return template('stop_times/select_stop.tpl.html', params = request.params, select="f_id", stopnames=stopnames, request=request, autoescape=True)
     return "False"
 
