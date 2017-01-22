@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  {% block head %}
+    {% block head %}
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,6 +28,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.min.js"></script>
 
     <script type="text/javascript" src="/static/js/main.js"></script>
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     {% block head_scripts %}
     {% endblock %}
 
@@ -154,6 +155,15 @@
     {% block content %}{% endblock %}
   </main>
 
+  <section class="container ads">
+      <div class="row">
+              <ins class="adsbygoogle"
+                   style="display:block"
+                   data-ad-client="ca-pub-7311832303084031"
+                   data-ad-slot="9564309082"
+                   data-ad-format="auto"></ins>
+       </div>
+  </section>
 
   <footer id="pageFooter">
     <div class="container">
@@ -255,6 +265,16 @@
               準備中
             </div>
           </section>
+          <section class="content">
+              <div class="heading">
+                <div class="title">広告</div>
+              </div>
+              <ins class="adsbygoogle"
+                   style="display:block"
+                   data-ad-client="ca-pub-7311832303084031"
+                   data-ad-slot="9564309082"
+                   data-ad-format="auto"></ins>
+          </section>
   			</div>
   		</div>
   	</div>
@@ -298,6 +318,10 @@
 
     ga('create', 'UA-65137506-1', 'auto');
     ga('send', 'pageview');
+  </script>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
   {% block footer_scripts %}{% endblock %}
   </body>
