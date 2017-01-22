@@ -5,6 +5,11 @@
   {{ super() }}
   <section class="section section-default">
   	<div class="container">
+        {% if select is defined and select == "f_id" %}
+        <h2>乗車地を選択</h2>
+        {% elif select is defined and select == "t_id" %}
+        <h2>下車地を選択</h2>
+        {% endif %}
   		<div class="row">
   			<div class="col-xs-12">
           <ul class="stop-list list-group">

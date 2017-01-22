@@ -57,7 +57,7 @@ def index():
             "title":"むろらんバスなび - 道南バス、室蘭市内のバス停・バス時刻案内",
             "discription":"道南バスの室蘭市内線のバス停地図の表示やバスの時刻表検索を行えます。平日・土日祝日にダイヤ対応。"
         },
-        params={"day": jst_now.date(), "time": "%d:%02d" % (jst_now.hour, jst_now.minute // 10 * 10)},
+        params={"day": jst_now.date(), "time": "%02d:%02d" % (jst_now.hour, jst_now.minute // 10 * 10)},
         autoescape=True
     )
 
