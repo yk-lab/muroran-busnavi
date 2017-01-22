@@ -13,6 +13,7 @@ from datetime import datetime, date, time
 from json_encoders import StopJSONEncoder
 import json
 import markdown
+import re
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +59,12 @@ def page(filename):
         with open(filepath + ".md", "r") as file:
             body = markdown.markdown(file.read())
     if body != None:
-        return template('page.tpl.html', body=body, autoescape=True)
+        titles = []
+        m = re.search(r'<h1>(.*?)</h1>', body)
+        if m:
+            titles.append(m.group(1))
+        titles.append("むろらんバスなび")
+        return template('page.tpl.html', page={"title":" - ".join(titles)}, body=body, autoescape=True)
     return HTTPError(404, 'Page not found.'+STATIC_DIR)
 
 @app.route('/')
