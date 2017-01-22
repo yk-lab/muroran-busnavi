@@ -12,6 +12,7 @@ from pytz import timezone
 from datetime import datetime, date, time
 from json_encoders import StopJSONEncoder
 import json
+import markdown
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH.append(BASE_DIR + "/templates")
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 ASSETS_DIR = os.path.join(BASE_DIR, 'assets/vendors')
+PAGES_PATH = os.path.join(BASE_DIR, "pages")
 
 app = bottle.Bottle()
 
@@ -47,6 +49,17 @@ def static_css(filename):
 @app.route('/static/<filename:path>')
 def static(filename):
     return static_file(filename, root=STATIC_DIR)
+
+@app.route('/page/<filename:path>')
+def page(filename):
+    body = None
+    filepath = os.path.join(PAGES_PATH, filename)
+    if os.path.isfile(filepath + ".md"):
+        with open(filepath + ".md", "r") as file:
+            body = markdown.markdown(file.read())
+    if body != None:
+        return template('page.tpl.html', body=body, autoescape=True)
+    return HTTPError(404, 'Page not found.'+STATIC_DIR)
 
 @app.route('/')
 def index():
