@@ -14,6 +14,6 @@
 * チップの受取には[ユグドア(YggDore)[http://www.yggdore.com]](http://www.yggdore.com)、[Kampa![http://kampa.me/]](http://kampa.me/)を利用しています。
     * YggDore
         * <a href="http://www.yggdore.com/t4u/"><img src="http://www.yggdore.com/t4ubtn/s468x60.jpg" width="468" height="60" alt="このページをチップで応援" /></a>
-            * お手数をお掛けしますが、当サイトは https にて公開しているため、上記バナーをクリックしていただいても、URLが自動入力されませんので予めご注意ください。URLは「https://muroran.bus-navi.yk-lab.net」と入力下さいますようよろしくお願いします。
+            * お手数をお掛けしますが、当サイトは https にて公開しているため、上記バナーをクリックしていただいてもURLが自動入力されませんのでご注意ください。URLは「https://muroran.bus-navi.yk-lab.net」と入力下さいますようよろしくお願いします。
     * Kampa!
         * <http://kampa.me/t/kff>
