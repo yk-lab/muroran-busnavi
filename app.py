@@ -14,6 +14,7 @@ from json_encoders import StopJSONEncoder
 import json
 import markdown
 import re
+import urllib.parse
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -144,6 +145,35 @@ def stop_search(db):
 @app.route('/stop_times/')
 def stop_times(db):
     if request.params.f_id and request.params.t_id:
+        if request.params.f_id:
+            stop = db.query(Stop).get(request.params.f_id)
+            if stop.now_name().name != request.params.from_q:
+                querys = []
+                for key in request.query:
+                    if key == "from_q":
+                        querys.append((key, stop.now_name().name))
+                    else:
+                        querys.append((key, request.query.getunicode(key)))
+                response.status = 302
+                redirect_url = '{0}://{1}/stop_times/?{2}'.format(
+                                request.urlparts.scheme, request.urlparts.netloc, urllib.parse.urlencode(querys))
+                response.set_header('Location', redirect_url)
+                return response
+        if request.params.t_id:
+            stop = db.query(Stop).get(request.params.t_id)
+            if stop.now_name().name != request.params.to_q:
+                querys = []
+                for key in request.query:
+                    if key == "to_q":
+                        querys.append((key, stop.now_name().name))
+                    else:
+                        querys.append((key, request.query.getunicode(key)))
+                response.status = 302
+                redirect_url = '{0}://{1}/stop_times/?{2}'.format(
+                                request.urlparts.scheme, request.urlparts.netloc, urllib.parse.urlencode(querys))
+                response.set_header('Location', redirect_url)
+                return response
+
         dt_now = datetime.now(timezone('Asia/Tokyo'))
         time_sec = -1
         time_obj = time(hour=dt_now.hour, minute=dt_now.minute)
@@ -206,6 +236,20 @@ def stop_times(db):
       response.set_header('Location', redirect_url)
     elif request.params.f_id and not request.params.t_id:
         # select t_id
+        if request.params.f_id:
+            stop = db.query(Stop).get(request.params.f_id)
+            if stop.now_name().name != request.params.from_q:
+                querys = []
+                for key in request.query:
+                    if key == "from_q":
+                        querys.append((key, stop.now_name().name))
+                    else:
+                        querys.append((key, request.query.getunicode(key)))
+                response.status = 302
+                redirect_url = '{0}://{1}/stop_times/?{2}'.format(
+                                request.urlparts.scheme, request.urlparts.netloc, urllib.parse.urlencode(querys))
+                response.set_header('Location', redirect_url)
+                return response
         stopnames = db.query(StopName).filter(StopName.name.contains(request.params.to_q)).order_by(func.char_length(StopName.name))
         return template('stop_times/select_stop.tpl.html', params = request.params, select="t_id", stopnames=stopnames, request=request, autoescape=True)
     elif not request.params.f_id:
