@@ -14,7 +14,9 @@ from json_encoders import StopJSONEncoder
 import json
 import markdown
 import re
+import numpy as np
 import urllib.parse
+from quadkey import QuadkeyUtils
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -111,7 +113,26 @@ def stop():
 def stop_detail(id, db):
     format = request.params.format
     stop = db.query(Stop).get(id)
-    print(stop)
+    lat = np.average(
+            np.array([sp.lat for sp in stop.positions if sp.availability])
+    )
+    lng = np.average(
+            np.array([sp.lng for sp in stop.positions if sp.availability])
+    )
+    quadkey = mercantile.quadkey(
+            mercantile.tile(lng, lat, QuadkeyUtils.search_LoD_lat(750, lat))
+    )
+    quadkeys = QuadkeyUtils.neighbors_quadkey(
+        QuadkeyUtils.quadkey_to_tile(
+            QuadkeyUtils.cut_key(
+                quadkey,
+                QuadkeyUtils.search_LoD(750, QuadkeyUtils.quadkey_to_tile(quadkey))
+            )
+        )
+    )
+
+    # db.query(StopPosition).filter(StopPosition.quadkey.startswith(quadkeys))
+
     if format == "json":
         return "todo"
     return template('stop/details.tpl.html',

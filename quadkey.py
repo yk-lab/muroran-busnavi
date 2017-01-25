@@ -1,11 +1,17 @@
-from math import cos, pi
+from math import cos, pi, floor
 import mercantile
 
-class QuadkeyUtils(mercantile):
+class QuadkeyUtils():
     E = 6378137 # 地球 [m]
 
     def l_e(self, tile):
-        return (cos(self.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/(2*tile.z)    # (cos(lat)*2*pi*E)/(2*LoD)
+        return (cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/(2*tile.z)    # (cos(lat)*2*pi*E)/(2*LoD)
+
+    def search_LoD(self, m, tile):
+        return floor((cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/(2*m))
+
+    def search_LoD_lat(self, m, lat):
+        return floor((cos(lat)*2*pi*self.E)/(2*m))
 
     def neighbors(self, tile):
         return [
@@ -15,7 +21,7 @@ class QuadkeyUtils(mercantile):
         ]
 
     def neighbors_quadkey(self, tile):
-        return [self.quadkey(*tile) for tile in self.neighbors(tile)]
+        return [mercantile.quadkey(*tile) for tile in self.neighbors(tile)]
 
     def cut_key(self, quadkey, LoD):
         return quadkey[:LoD]
