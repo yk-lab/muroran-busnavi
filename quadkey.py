@@ -1,32 +1,37 @@
-from math import cos, pi, floor
+from math import cos, pi, floor, log2, radians
 import mercantile
+from mercantile import Tile
 
 class QuadkeyUtils():
     E = 6378137 # 地球 [m]
 
     def l_e(self, tile):
-        return (cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/(2*tile.z)    # (cos(lat)*2*pi*E)/(2*LoD)
+        return (cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/pow(2, tile.z)
 
-    def search_LoD(self, m, tile):
-        return floor((cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*self.E)/(2*m))
+    def search_LoD(m, tile):
+        return floor((cos(mercantile.ul(tile.x, tile.y, tile.z).lat)*2*pi*QuadkeyUtils.E)/(2*m))
 
-    def search_LoD_lat(self, m, lat):
-        return floor((cos(lat)*2*pi*self.E)/(2*m))
+    def search_LoD_lat(m, lat):
+        return floor(
+            log2(
+                (cos(radians(lat))*2*pi*QuadkeyUtils.E)/m
+            )
+        )
 
-    def neighbors(self, tile):
+    def neighbors(tile):
         return [
-            self.nextTile(self.nextTile(tile, "top"), "left"), self.nextTile(tile, "top"), self.nextTile(self.nextTile(tile, "top"), "right"),
-            self.nextTile(tile, "left"), tile, self.nextTile(tile, "right"),
-            self.nextTile(self.nextTile(tile, "bottom"), "left"), self.nextTile(tile, "bottom"), self.nextTile(self.nextTile(tile, "bottom"), "right")
+            QuadkeyUtils.nextTile(QuadkeyUtils.nextTile(tile, "top"), "left"), QuadkeyUtils.nextTile(tile, "top"), QuadkeyUtils.nextTile(QuadkeyUtils.nextTile(tile, "top"), "right"),
+            QuadkeyUtils.nextTile(tile, "left"), tile, QuadkeyUtils.nextTile(tile, "right"),
+            QuadkeyUtils.nextTile(QuadkeyUtils.nextTile(tile, "bottom"), "left"), QuadkeyUtils.nextTile(tile, "bottom"), QuadkeyUtils.nextTile(QuadkeyUtils.nextTile(tile, "bottom"), "right")
         ]
 
-    def neighbors_quadkey(self, tile):
-        return [mercantile.quadkey(*tile) for tile in self.neighbors(tile)]
+    def neighbors_quadkey(tile):
+        return [mercantile.quadkey(*tile) for tile in QuadkeyUtils.neighbors(tile)]
 
-    def cut_key(self, quadkey, LoD):
+    def cut_key(quadkey, LoD):
         return quadkey[:LoD]
 
-    def nextTile(self, tile, dir):
+    def nextTile(tile, dir):
         # TODO:極域条件
         if dir == "top":
             return Tile(tile.x - 1, tile.y, tile.z)
