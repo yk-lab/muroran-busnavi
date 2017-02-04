@@ -18,6 +18,7 @@ import numpy as np
 import urllib.parse
 import mercantile
 from quadkey import QuadkeyUtils
+from lat_lng import dist_on_sphere
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -116,7 +117,7 @@ def stop_detail(id, db):
     stop = db.query(Stop).get(id)
     lat = sum([sp.lat for sp in stop.positions if sp.availability])/len([sp.lat for sp in stop.positions if sp.availability])
     lng = sum([sp.lng for sp in stop.positions if sp.availability])/len([sp.lng for sp in stop.positions if sp.availability])
-    dl = QuadkeyUtils.search_LoD_lat(750, float(lat))
+    dl = QuadkeyUtils.search_LoD_lat(500, float(lat))
     quadkey = mercantile.quadkey(
             *mercantile.tile(float(lng), float(lat), dl)
     )
@@ -130,9 +131,37 @@ def stop_detail(id, db):
         )
     )
 
-    print(quadkeys)
+    neighbor_stops = db.query(Stop).filter(
+            Stop.id.in_(
+                db.query(StopPosition.stop_code).filter(
+                        or_(
+                            StopPosition.quadkey.startswith(quadkeys[0]),
+                            StopPosition.quadkey.startswith(quadkeys[1]),
+                            StopPosition.quadkey.startswith(quadkeys[2]),
+                            StopPosition.quadkey.startswith(quadkeys[3]),
+                            StopPosition.quadkey.startswith(quadkeys[4]),
+                            StopPosition.quadkey.startswith(quadkeys[5]),
+                            StopPosition.quadkey.startswith(quadkeys[6]),
+                            StopPosition.quadkey.startswith(quadkeys[7]),
+                            StopPosition.quadkey.startswith(quadkeys[8])
+                        )
+                )
+            )
+    )
 
-    # db.query(StopPosition).filter(StopPosition.quadkey.startswith(quadkeys))
+    n_stops = []
+    for ns in neighbor_stops.all():
+        print("ns: %s, sid: %s" % (ns.id, stop.id))
+        if ns.id != stop.id:
+            a_lat = sum([sp.lat for sp in ns.positions if sp.availability])/len([sp.lat for sp in ns.positions if sp.availability])
+            a_lng = sum([sp.lng for sp in ns.positions if sp.availability])/len([sp.lng for sp in ns.positions if sp.availability])
+            dist = dist_on_sphere((lat, lng), (a_lat, a_lng))
+            if dist <= 0.500:
+                n_stops.append({"stop": ns, "dist": int(round(dist * 1000, -1))})
+        if n_stops:
+            n_stops.sort(key=lambda x:x["dist"])
+
+    #print("stops: %s" % neighbor_stops.all())
 
     if format == "json":
         return "todo"
@@ -140,7 +169,8 @@ def stop_detail(id, db):
             page={
                 "title":stop.now_name().name + " - 駅・停留所 - むろらんバスなび",
             },
-            stop=stop, autoescape=True)
+            stop=stop,
+            neighbor_stops=n_stops, autoescape=True)
 
 @app.route('/stops/search/')
 def stop_search(db):
