@@ -151,7 +151,6 @@ def stop_detail(id, db):
 
     n_stops = []
     for ns in neighbor_stops.all():
-        print("ns: %s, sid: %s" % (ns.id, stop.id))
         if ns.id != stop.id:
             a_lat = sum([sp.lat for sp in ns.positions if sp.availability])/len([sp.lat for sp in ns.positions if sp.availability])
             a_lng = sum([sp.lng for sp in ns.positions if sp.availability])/len([sp.lng for sp in ns.positions if sp.availability])
