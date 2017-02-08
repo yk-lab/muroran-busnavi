@@ -1,4 +1,15 @@
 {% extends "layout.tpl.html" %}
+{% block ogp %}
+    <meta property="fb:admins" content="1212432762198084" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://muroran.bus-navi.yk-lab.net" />
+    {% if page is defined and page.title is defined -%}
+      <meta property="og:title" content="{{ page.title }}" />
+    {% endif -%}
+    <meta property="og:description" content="室蘭市内の道南バスのバス停・バス時刻案内をおこないます" />
+    <meta property="og:site_name" content="むろらんバスなび" />
+    <meta property="og:locale" content="ja_JP" />
+{% endblock %}
 {% block content %}
   <section class="jumbotron">
     <div class="container">
