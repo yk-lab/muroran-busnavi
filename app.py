@@ -14,9 +14,12 @@ from json_encoders import StopJSONEncoder
 import json
 import markdown
 import re
+import base64
+import mimetypes, uuid
 import numpy as np
 import urllib.parse
 import mercantile
+import pymongo
 from quadkey import QuadkeyUtils
 from lat_lng import dist_on_sphere
 
@@ -27,8 +30,10 @@ TEMPLATE_PATH.append(BASE_DIR + "/templates")
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 ASSETS_DIR = os.path.join(BASE_DIR, 'assets/vendors')
 PAGES_PATH = os.path.join(BASE_DIR, "pages")
+FEEDBACK_FILE_DIR = os.path.join(BASE_DIR, "uploaded/feedback-files")
 
 app = bottle.Bottle()
+bottle.BaseRequest.MEMFILE_MAX = 5000000
 
 # TODO: 0.13 が stable になったら使えるのでは？
 # app.config.load_dict(ConfigDict().load_module('config'))
@@ -40,6 +45,8 @@ app.config['BOTTLE_CHILD']   = True
 app.config['DB.URL']   = 'mysql://bus_navi:bus_navi@db/bus_navi?charset=utf8mb4'
 app.config['DB.ECHO']   = True
 app.config['SQLALCHEMY_NATIVE_UNICODE'] = 'utf-8'
+app.config['FEEDBACK.DB.HOST'] = "fbdb"
+app.config['FEEDBACK.DB.PORT'] = 27017
 
 bottle.debug(app.config.get('DEBUG', False))
 #TODO: os.environ['BOTTLE_CHILD']
@@ -308,6 +315,38 @@ def stop_times(db):
         stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).order_by(func.char_length(StopName.name))
         return template('stop_times/select_stop.tpl.html', params = request.params, select="f_id", stopnames=stopnames, request=request, autoescape=True)
     return "False"
+
+# Routing /feedback
+@app.post('/feedback/')
+def post_feedback():
+    data = json.loads(request.forms.data)
+
+    prefix, body = data[1].split(",", 2)
+    matchOB = re.match(r"^data:([^;]+);(\w+)", prefix)
+    if matchOB.group(2) == "base64":
+        body = base64.b64decode(body)
+
+    ext = mimetypes.guess_extension(matchOB.group(1))
+    filename = str(uuid.uuid4().hex) + ext
+    with open(FEEDBACK_FILE_DIR + "/" + filename, "wb") as f:
+        f.write(body)
+
+    data[0]["UploadFilenames"] = [filename]
+
+    client = pymongo.MongoClient(host=app.config['FEEDBACK.DB.HOST'], port=app.config['FEEDBACK.DB.PORT'])
+    feedback_db = client.feedback
+    fb = feedback_db.feedback
+    result = fb.insert_one({"type": "issue", "body": {"text": data[0]["Issue"], "files": data[0]["UploadFilenames"], "registered_on": datetime.utcnow()}, "status": "new"})
+    return str(result.inserted_id)
+
+@app.get('/feedback/')
+def get_feedback():
+    client = pymongo.MongoClient(host=app.config['FEEDBACK.DB.HOST'], port=app.config['FEEDBACK.DB.PORT'])
+    feedback_db = client.feedback
+    fb = feedback_db.feedback
+
+    return fb.find()[0]["body"]["text"]
+
 
 # Routing /admin
 @app.route('/admin/stop/')

@@ -293,3 +293,4 @@ pyvenv.cfg
 pip-selfcheck.json
 
 
+uploaded/feedback-files/*

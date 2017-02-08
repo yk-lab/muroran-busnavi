@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if page is defined and page.title is defined %}
-      <title>{{ page.title }}</title>
+      <title>{{ page.title }} (βテスト)</title>
     {% endif %}
     {% if page is defined and page.description is defined %}
       <meta name="description" content="{{page.description}}">
@@ -16,6 +16,7 @@
     {% block ogp %}
     {% endblock %}
     <link rel="stylesheet" href="/assets/rin/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/static/css/feedback.css"/>
     {% block css_files %}
     {% endblock %}
     <!-- jQuery http://jquery.com/ -->
@@ -269,7 +270,7 @@
               <p class="discription">お問い合わせ/ご意見・ご要望</p>
             </div>
             <div class="body">
-              準備中
+              準備中。右下に表示されているフィードバックボタンよりおねがいします。
             </div>
           </section>
           <section class="content">
@@ -331,5 +332,23 @@
   (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
   {% block footer_scripts %}{% endblock %}
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/feedback.js/2012.10.17/feedback.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      Feedback({
+          h2cPath:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js',
+          label: 'フィードバックを送る (αテスト)',
+          header: 'フィードバック (ver. α)',
+          url: '/feedback/',
+          nextLabel: '次へ',
+          reviewLabel: 'プレビュー',
+          sendLabel: '送る',
+          closeLabel: '閉じる',
+          messageSuccess: 'フィードバックの送信に成功しました。ご協力ありがとうございました！',
+          messageError: 'フィードバックの送信に失敗しました。もう一度送信するか、Twitter・Facebookを通じてフィードバックを送信のほどよろしくお願いします。'
+      });
+    });
+  </script>
   </body>
 </html>
