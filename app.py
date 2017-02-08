@@ -22,6 +22,7 @@ import mercantile
 import pymongo
 from quadkey import QuadkeyUtils
 from lat_lng import dist_on_sphere
+from slacker import Slacker
 
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,6 +48,9 @@ app.config['DB.ECHO']   = True
 app.config['SQLALCHEMY_NATIVE_UNICODE'] = 'utf-8'
 app.config['FEEDBACK.DB.HOST'] = "fbdb"
 app.config['FEEDBACK.DB.PORT'] = 27017
+
+with open('./config.json') as fp:
+    app.config.load_dict(json.load(fp))
 
 bottle.debug(app.config.get('DEBUG', False))
 #TODO: os.environ['BOTTLE_CHILD']
@@ -337,6 +341,13 @@ def post_feedback():
     feedback_db = client.feedback
     fb = feedback_db.feedback
     result = fb.insert_one({"type": "issue", "body": {"text": data[0]["Issue"], "files": data[0]["UploadFilenames"], "registered_on": datetime.utcnow()}, "status": "new"})
+
+    slack = Slacker(app.config['FEEDBACK.SLACK.TOKEN'])
+    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "Feedback: "+ str(result.inserted_id))
+    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], data[0]["Issue"])
+    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "File: " + FEEDBACK_FILE_DIR + "/" + filename)
+    slack.files.upload(FEEDBACK_FILE_DIR + "/" + filename)
+
     return str(result.inserted_id)
 
 @app.get('/feedback/')
