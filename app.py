@@ -57,6 +57,10 @@ bottle.debug(app.config.get('DEBUG', False))
 
 db_init(app)
 
+# jinja2のfilterを設定
+from bottle import BaseTemplate
+BaseTemplate.settings.update({'filters': {'tojson': lambda content: json.dumps(content)}})
+
 # static Rin files
 @app.route('/assets/rin/<filename:path>')
 def static_css(filename):
@@ -372,6 +376,83 @@ def admin_stop_list():
 def admin_stop_add():
     return HTTPError(404, 'page not found.')
 
+@app.route('/api/v1.0/stop_search')
+def api_v1_0_stop_search(db):
+    response.content_type = 'application/json'
+    search_type = request.params.type
+    if search_type == "latlng":
+        try:
+            lat = float(request.params.lat)
+            lng = float(request.params.lng)
+        except ValueError:
+            response.status = 400
+            return json.dumps({"Error":[
+                {"message": "Missed Required Params"}
+            ]})
+        try:
+            radius = float(request.params.radius)
+        except ValueError:
+            radius = 750
+        if radius < 30:
+            radius = 30
+        if lat >= -90 and lat <= 90 and lng >= -180 and lng <= 180:
+            dl = QuadkeyUtils.search_LoD_lat(radius, lat)
+            quadkeys = QuadkeyUtils.neighbors_quadkey(
+                mercantile.quadkey_to_tile(
+                    QuadkeyUtils.cut_key(
+                        mercantile.quadkey(*mercantile.tile(lng, lat, dl)),
+                        dl
+                    )
+                )
+            )
+
+            near_stops = db.query(Stop).filter(
+                    Stop.id.in_(
+                        db.query(StopPosition.stop_code).filter(
+                                or_(
+                                    StopPosition.quadkey.startswith(quadkeys[0]),
+                                    StopPosition.quadkey.startswith(quadkeys[1]),
+                                    StopPosition.quadkey.startswith(quadkeys[2]),
+                                    StopPosition.quadkey.startswith(quadkeys[3]),
+                                    StopPosition.quadkey.startswith(quadkeys[4]),
+                                    StopPosition.quadkey.startswith(quadkeys[5]),
+                                    StopPosition.quadkey.startswith(quadkeys[6]),
+                                    StopPosition.quadkey.startswith(quadkeys[7]),
+                                    StopPosition.quadkey.startswith(quadkeys[8])
+                                )
+                        )
+                    )
+            )
+
+            stops = []
+            for ns in near_stops.all():
+                a_lat = sum([sp.lat for sp in ns.positions if sp.availability])/len([sp.lat for sp in ns.positions if sp.availability])
+                a_lng = sum([sp.lng for sp in ns.positions if sp.availability])/len([sp.lng for sp in ns.positions if sp.availability])
+                dist = dist_on_sphere((lat, lng), (a_lat, a_lng)) * 1000
+                if dist <= radius:
+                    stops.append({"stop_data": ns, "dist": int(round(dist, -1))})
+            if stops:
+                stops.sort(key=lambda x:x["dist"])
+            print(stops)
+            return template(
+                "api/v1.0/stop_search.json",
+                stops=stops,
+                query={
+                    "lat": lat,
+                    "lng": lng,
+                    "radius": radius
+                },
+                autoescape=True
+            )
+    else:
+        response.status = 400
+        return json.dumps({"Error":[
+            {"message": "Unsupported Type"}
+        ]})
+    response.status = 400
+    return json.dumps({"Error":[
+        {"message": "Bad Request"}
+    ]})
 
 #if app.config.get('RELOAD'):
 print("Reload: true")
