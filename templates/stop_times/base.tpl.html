@@ -19,7 +19,9 @@
                 <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
                 {% endif %}
             </span>
-            <input type="text" name="from_q" value="{{ params.from_q }}" class="form-control "/>
+            <input type="text" name="from_q" value="{{ params.from_q }}" class="form-control" autocomplete="on" list="stop_candidate"/>
+           <datalist id="stop_candidate">
+           </datalist>
             {% if params.f_id is defined and params.f_id != "" %}
             <span class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
             {% endif %}
@@ -43,7 +45,9 @@
                 <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
                 {% endif %}
             </span>
-            <input type="text" name="to_q" value="{{ params.to_q }}" class="form-control"/>
+            <input type="text" name="to_q" value="{{ params.to_q }}" class="form-control" autocomplete="on" list="stop_candidate"/>
+           <datalist id="stop_candidate">
+           </datalist>
             {% if params.t_id is defined and params.t_id != "" %}
             <span class="glyphicon glyphicon-ok form-control-feedback" aria-hidden="true"></span>
             {% endif %}

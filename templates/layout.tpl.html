@@ -154,7 +154,7 @@
     道南バス、2016年12月1日改正ダイヤに対応しました
   </div>
 
-  <main>
+  <main id="{% block page_id %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
 
@@ -350,5 +350,7 @@
       });
     });
   </script>
+  <script type="text/javascript" src="/static/js/router.js"></script>
+  <script type="text/javascript" src="/static/js/stopname_history_localstore.js"></script>
   </body>
 </html>

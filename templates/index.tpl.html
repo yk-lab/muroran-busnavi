@@ -20,11 +20,15 @@
       <form action="/stop_times/" method="get">
         <div class="form-group input-group-lg col-md-6">
           <label>乗車:</label>
-          <input type="text" name="from_q" value="" class="form-control"/>
+          <input type="text" name="from_q" value="" class="form-control" autocomplete="on" list="stop_candidate"/>
+         <datalist id="stop_candidate">
+         </datalist>
         </div>
         <div class="form-group input-group-lg col-md-6">
           <label>下車:</label>
-          <input type="text" name="to_q" value="" class="form-control"/>
+          <input type="text" name="to_q" value="" class="form-control" autocomplete="on" list="stop_candidate"/>
+          <datalist id="stop_candidate">
+          </datalist>
         </div>
         <div class="form-group input-group-lg col-md-6">
           <label>日:</label>
