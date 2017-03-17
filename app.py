@@ -248,7 +248,7 @@ def stop_times(db):
             if t[0] and t[1] and t[0].isdigit() and t[1].isdigit():
                 time_sec = int(t[0]) * 3600 + int(t[1]) * 60
                 time_obj = time(hour=int(t[0]), minute=int(t[1]), tzinfo=timezone('Asia/Tokyo'))
-        if not time and time < 0:
+        if time_sec < 0:
             time_sec = dt_now.hour * 3600 + dt_now.minute * 60
             # request.params.replace("time", "%d:%02d" % (dt_now.hour, dt_now.minute))
 
@@ -285,11 +285,11 @@ def stop_times(db):
         f_stop_positions = db.query(StopPosition.id).filter(StopPosition.stop_code == request.params.f_id)
         t_stop_positions = db.query(StopPosition.id).filter(StopPosition.stop_code == request.params.t_id)
         f_stop_times = db.query(StopTime.trip_code).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code.in_(trips), StopTime.departure_time > time_sec)
-        t_stop_times = db.query(StopTime).filter(StopTime.stop_code.in_(t_stop_positions), StopTime.trip_code.in_(trips), StopTime.trip_code.in_(f_stop_times)).order_by(StopTime.departure_time).limit(15)
+        t_stop_times = db.query(StopTime).filter(StopTime.stop_code.in_(t_stop_positions), StopTime.trip_code.in_(trips), StopTime.trip_code.in_(f_stop_times)).order_by(StopTime.arrival_time).limit(20)
 
         stop_times = list()
         for t_stop_time in t_stop_times:
-            st = db.query(StopTime).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code == t_stop_time.trip_code, StopTime.stop_sequence < t_stop_time.stop_sequence).order_by(StopTime.stop_sequence.desc()).first()
+            st = db.query(StopTime).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code == t_stop_time.trip_code, StopTime.stop_sequence < t_stop_time.stop_sequence, StopTime.departure_time > time_sec).order_by(StopTime.stop_sequence.desc()).first()
             if st != None and {"from": st, "to": t_stop_time} not in stop_times:
 #                print({"from": st, "to": t_stop_time})
 #                print(stop_times)
