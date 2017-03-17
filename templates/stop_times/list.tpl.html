@@ -64,7 +64,7 @@
                       {% if stop_time.from.position.desc %}
                         ({{stop_time.from.position.desc}})
                       {% endif %}
-                      <a href="/positions/{{stop_time.from.position.id}}">&lt;地図で確認&gt;</a>
+                      <a href="/stops/{{stop_time.from.position.stop.id}}?from={{stop_time.from.position.id}}">&lt;地図で確認&gt;</a>
                   </li>
                   <li>
                       下車位置:
@@ -77,7 +77,7 @@
                       {% if stop_time.to.position.desc %}
                         ({{stop_time.to.position.desc}})
                       {% endif %}
-                      <a href="/positions/{{stop_time.to.position.id}}">&lt;地図で確認&gt;</a>
+                      <a href="/stops/{{stop_time.to.position.stop.id}}?to={{stop_time.to.position.id}}">&lt;地図で確認&gt;</a>
                   </li>
               </ul>
               <p class="text-muted"><small>乗車位置・下車位置は道路状況や運用上などの理由により変更になる場合や特定の便のみ異なる場合がありますので、予めご了承ください。

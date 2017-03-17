@@ -44,11 +44,11 @@
     var stops = [
       {%- for position in stop.positions -%}
         {%- if position.availability() %}
-          {Title: "{{ stop.now_name().name }}", LatLng:{lat: {{ position.lat }}, lng: {{ position.lng }}}},
+          {id: "{{ position.id }}", name: "{{ position.stop.now_name().name }}", subname: "{{ position.subname }}", LatLng:{lat: {{ position.lat }}, lng: {{ position.lng }}}},
         {%- endif -%}
       {%- endfor %}
     ];
-
+    var markers = [];
     var center = {lat: 0, lng: 0};
 
     // Create a map object and specify the DOM element for display.
@@ -69,14 +69,41 @@
 
     // Create a marker and set its position.
     stops.forEach(function(stop, i, a){
-      new google.maps.Marker({
-        map: map,
-        position: stop.LatLng,
-        title: stop.Title
-      });
+        var marker = new google.maps.Marker({
+          map: map,
+          position: stop.LatLng,
+          label: stop.subname != null && stop.subname != "" ? stop.name + " " + stop.subname : stop.name
+        });
+        markers[stop.id] = marker;
     });
+
+    (function(){
+        var get_query = function(key) {
+            var url   = location.href;
+            parameters    = url.split("?");
+            params   = parameters[1].split("&");
+            var paramsArray = [];
+            for ( i = 0; i < params.length; i++ ) {
+                neet = params[i].split("=");
+                paramsArray.push(neet[0]);
+                paramsArray[neet[0]] = neet[1];
+            }
+            return paramsArray[key];
+        };
+        if (get_query("from") != null && get_query("from") in markers) {
+            new google.maps.InfoWindow({
+                content: "乗車"
+            }).open(markers[get_query("from")].getMap(), markers[get_query("from")]);
+        }
+        if (get_query("to") != null && get_query("to") in markers) {
+            new google.maps.InfoWindow({
+                content: "下車"
+            }).open(markers[get_query("to")].getMap(), markers[get_query("to")]);
+        }
+    })();
   }
 
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9Mpuf4zHL1O_4RzrnNCz2GPc7YVUVdDU&callback=initMap" async defer></script>
+<script src="/static/js/stop_position.js" async defer></script>
 {% endblock %}
