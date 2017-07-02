@@ -354,13 +354,14 @@ def post_feedback():
 
     return str(result.inserted_id)
 
-@app.get('/feedback/')
+@app.get('/admin/feedback/')
 def get_feedback():
     client = pymongo.MongoClient(host=app.config['FEEDBACK.DB.HOST'], port=app.config['FEEDBACK.DB.PORT'])
     feedback_db = client.feedback
     fb = feedback_db.feedback
 
-    return fb.find()[0]["body"]["text"]
+    #return fb.find()[0]["body"]["text"]
+    return HTTPError(404, 'page not found.')
 
 
 # Routing /admin
