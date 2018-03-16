@@ -108,6 +108,11 @@
       p.bottom-desc {
         padding: 0em 1em 1em 1em;
       }
+
+      #miyaran-180622{
+        margin: 1pt;
+        padding: 3pt 15pt;
+      }
     </style>
   {% endblock %}
 </head>
@@ -118,7 +123,7 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#HaederCollapse">
           <span class="sr-only">Toggle navigation</span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
@@ -127,7 +132,7 @@
         <a class="navbar-brand" href="/">むろらんバスなび</a>
       </div>
 
-      <div class="collapse navbar-collapse">
+      <div class="collapse navbar-collapse" id="HaederCollapse">
         <ul class="nav navbar-nav">
           <li><a href="/">バス時刻検索</a></li>
           <li><a href="/stops/search/">バス停検索</a></li>
@@ -138,6 +143,7 @@
             <li><a href="#footer">プライバシーポリシー</a></li>
           -->
         </ul>
+        <pre id="miyaran-180622" class="navbar-right"></pre>
       </div>
     </div>
   </nav>
@@ -371,5 +377,9 @@
   </script>
   <script type="text/javascript" src="/static/js/router.js"></script>
   <script type="text/javascript" src="/static/js/stopname_history_localstore.js"></script>
+  <script defer src="http://www.yk-lab.net/widget/miyaran-180622.js" charset="UTF-8"
+  onload="this.onload=function(){};miyaran(document.getElementById('miyaran-180622'))"
+  onreadystatechange="if (this.readyState === 'complete') this.onload()">
+  </script>
   </body>
 </html>

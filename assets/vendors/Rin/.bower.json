@@ -49,9 +49,9 @@
   "_resolution": {
     "type": "version",
     "tag": "v3.3.7-2",
-    "commit": "6457eead19802b4e9c4f734a1570cdf87e93043a"
+    "commit": "6bdf4cfd8910ec29acac12ca2863cac03df77acd"
   },
-  "_source": "https://github.com/raryosu/Rin.git",
+  "_source": "https://github.com/raryosu/rin.git",
   "_target": "v3.3.7-2",
   "_originalSource": "Rin",
   "_direct": true
