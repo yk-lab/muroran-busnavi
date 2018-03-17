@@ -1,48 +1,9 @@
 {% extends "layout.tpl.html" %}
 {% block content %}
-<div class="container">
-  <h1>サインイン</h1>
-  <p>希望するサインイン（ログイン）方法を選択してください：</p>
-  <div id="firebaseui-auth-container"></div>
-</div>
 {% endblock %}
 {% block css_files %}
-<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/1.0.0/firebaseui.css" />
 {% endblock %}
 {% block head_scripts %}
-<script src="https://cdn.firebase.com/libs/firebaseui/1.0.0/firebaseui.js"></script>
 {% endblock %}
 {% block footer_scripts %}
-<script type="text/javascript">
-  // FirebaseUI config.
-  var prevUser = firebase.auth().currentUser;
-  var uiConfig = {
-    callbacks: {
-      signInSuccess: function(currentUser, credential, redirectUrl) {
-        if (prevUser){
-          prevUser.link(credential).then(function(user) {
-            console.log("Account linking success", user);
-          }, function(error) {
-            console.log("Account linking error", error);
-          });
-        }
-        return true;
-      }
-    },
-    credentialHelper: firebaseui.auth.CredentialHelper.ACCOUNT_CHOOSER_COM,
-    signInSuccessUrl: '/signin/success/',
-    signInOptions: [
-      // Leave the lines as is for the providers you want to offer your users.
-      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-      firebase.auth.TwitterAuthProvider.PROVIDER_ID
-    ],
-    // Terms of service url.
-    tosUrl: '<your-tos-url>'
-  };
-
-  // Initialize the FirebaseUI Widget using Firebase.
-  var ui = new firebaseui.auth.AuthUI(firebase.auth());
-  // The start method will wait until the DOM is loaded.
-  ui.start('#firebaseui-auth-container', uiConfig);
-</script>
 {% endblock %}
