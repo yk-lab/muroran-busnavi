@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+from logging import basicConfig, getLogger, DEBUG, INFO
 import bottle
 from bottle import HTTPError
 from bottle import static_file, get, post, request, response
@@ -36,24 +37,18 @@ FEEDBACK_FILE_DIR = os.path.join(BASE_DIR, "uploaded/feedback-files")
 app = bottle.Bottle()
 bottle.BaseRequest.MEMFILE_MAX = 5000000
 
-# TODO: 0.13 が stable になったら使えるのでは？
-# app.config.load_dict(ConfigDict().load_module('config'))
-# それまでは直書き（時間があれば要改善）
-app.config['SECRET_KEY'] = '9fpxcp7h'
-app.config['DEBUG']   = True
-app.config['RELOAD']  = True
-app.config['BOTTLE_CHILD']   = True
-app.config['DB.URL']   = 'mysql://bus_navi:bus_navi@db/bus_navi?charset=utf8mb4'
-app.config['DB.ECHO']   = True
-app.config['SQLALCHEMY_NATIVE_UNICODE'] = 'utf-8'
-app.config['FEEDBACK.DB.HOST'] = "fbdb"
-app.config['FEEDBACK.DB.PORT'] = 27017
-
+# 設定を読み込む
 with open('./config.json') as fp:
     app.config.load_dict(json.load(fp))
 
 bottle.debug(app.config.get('DEBUG', False))
-#TODO: os.environ['BOTTLE_CHILD']
+
+if app.config.get('DEBUG', False):
+    basicConfig(level=DEBUG)
+else:
+    basicConfig(level=INFO)
+
+logger = getLogger(__name__)
 
 db_init(app)
 
@@ -117,7 +112,7 @@ def company():
 def company_detail(id, db):
     company = db.query(Company).first()
     if company:
-        print(company)
+        logger.debug(company)
         return template('company/details.tpl.html', company=company, autoescape=True)
     return HTTPError(404, 'Entity not found.')
 
@@ -175,7 +170,7 @@ def stop_detail(id, db):
         if n_stops:
             n_stops.sort(key=lambda x:x["dist"])
 
-    #print("stops: %s" % neighbor_stops.all())
+    #logger.debug("stops: %s" % neighbor_stops.all())
 
     if format == "json":
         return "todo"
@@ -192,11 +187,11 @@ def stop_search(db):
     format = request.params.format
     if query != None and query != "":
         # stops = db.query(Stop).filter(Stop.id.in_(db.query(StopName, StopName.stop_code).filter(StopName.name.contains(query))))
-        print("query: %s" % query)
+        logger.debug("query: %s" % query)
         stopnames = db.query(StopName).filter(StopName.name.contains(query)).order_by(func.char_length(StopName.name))
 #        stopnames = db.query(StopName).filter(StopName.name.contains(query), StopName.application_start <= datetime.utcnow(), or_(StopName.application_end == None, StopName.application_end >= datetime.utcnow())).order_by(desc("stop_names.application_start")).all()
 #        stops = db.query(Stop).filter(Stop.id.in_([i.stop_code for i in stopnames])).all()
-        print(stopnames)
+        logger.debug(stopnames)
         if format == "json":
             response.content_type = 'application/json'
 #            return json.dumps([stop.to_dict() for stop in stops])
@@ -291,8 +286,8 @@ def stop_times(db):
         for t_stop_time in t_stop_times:
             st = db.query(StopTime).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code == t_stop_time.trip_code, StopTime.stop_sequence < t_stop_time.stop_sequence, StopTime.departure_time > time_sec).order_by(StopTime.stop_sequence.desc()).first()
             if st != None and {"from": st, "to": t_stop_time} not in stop_times:
-#                print({"from": st, "to": t_stop_time})
-#                print(stop_times)
+#                logger.debug({"from": st, "to": t_stop_time})
+#                logger.debug(stop_times)
                 stop_times.append({"from": st, "to": t_stop_time})
         return template('stop_times/list.tpl.html', stop_times = stop_times, params = request.params, autoescape=True)
     elif not request.params.from_q or not request.params.to_q:
@@ -434,7 +429,7 @@ def api_v1_0_stop_search(db):
                     stops.append({"stop_data": ns, "dist": int(round(dist, -1))})
             if stops:
                 stops.sort(key=lambda x:x["dist"])
-            print(stops)
+            logger.debug(stops)
             return template(
                 "api/v1.0/stop_search.json",
                 stops=stops,
@@ -455,8 +450,8 @@ def api_v1_0_stop_search(db):
         {"message": "Bad Request"}
     ]})
 
-#if app.config.get('RELOAD'):
-print("Reload: true")
-app.run(host='0.0.0.0', port=8080, reload=True, reloader=True)
+if app.config.get('RELOAD', False):
+    logger.debug("Reload: true")
+app.run(host='0.0.0.0', port=80, reload=app.config.get('RELOAD', False), reloader=app.config.get('RELOAD', False))
 #else:
 #    app.run(host='0.0.0.0', port=8080)
