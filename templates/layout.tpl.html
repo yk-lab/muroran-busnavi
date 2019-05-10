@@ -502,20 +502,5 @@
     // The start method will wait until the DOM is loaded.
     ui.start('#firebaseui-auth-container', uiConfig);
   </script>
-  <script defer src="//www.yk-lab.net/widget/miyaran-180622.js" charset="UTF-8"
-  onload="this.onload=function(){};miyaran(document.getElementById('miyaran-180622'));miyaran(document.getElementById('miyaran-180622-2'))"
-  onreadystatechange="if (this.readyState === 'complete') this.onload()">
-  </script>
-  <script>
-  $(window).scroll(function(){
-    var t = $('#miyaran-180622-2').offset().top; // ターゲットの位置取得
-    var p = t - $(window).height();  // 画面下部からのターゲットの位置
-    if($(window).scrollTop() > p){
-      $('#miyaran-180622').hide(); // ボタンを非表示
-    }else{
-      $('#miyaran-180622').show(); // ボタンを表示
-    }
-  });
-  </script>
   </body>
 </html>
