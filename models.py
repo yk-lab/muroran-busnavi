@@ -18,22 +18,25 @@ def Page():
         self.title = kwargs.get('title', "Not Defined")
         self.discription = kwargs.get('discription', None)
 
-def db_init(app):
+def db_init(config, app=None):
     engine = create_engine(
-        app.config['DB.URL'],
+        app.config['DB.URL'] if app else config['DB_URL'],
         pool_recycle=5, # 5sec
-        echo=app.config['DB.ECHO']
+        echo=app.config['DB.ECHO'] if app else config['DB_ECHO']
     )
     session = sessionmaker()
     session.configure(bind=engine)
     Base.metadata.create_all(engine)
-    app.install(
-        sqlalchemy.Plugin(
-            engine,
-            Base.metadata,
-            create=True
+    if app:
+        app.install(
+            sqlalchemy.Plugin(
+                engine,
+                Base.metadata,
+                create=True
+            )
         )
-    )
+    else:
+        return session
 
 class Company(Base):
     __tablename__ = 'companies'
@@ -111,7 +114,8 @@ class Stop(Base):
             # primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start < now(), or_(StopName.application_end != None, StopName.application_end > now()))",
 #             primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start <= '%s')" % datetime.utcnow().isoformat(),
 #            primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start <= '%s')" % datetime.utcnow().isoformat(),
-            order_by=desc("stop_names.application_start"),
+#             order_by=desc("stop_names.application_start"),
+            order_by="desc(StopName.application_start)",
 #            uselist=False,
             backref="stop")
     positions = relationship("StopPosition", backref="stop")
@@ -135,7 +139,7 @@ class Stop(Base):
 
 
     def __repr__(self):
-        return "<Stop('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_id_prefix, self.stop_id, self.wheelchair_boarding, self.registered_on, self.application_start, self.application_end, self.name, self.positions, self.url)
+        return f"<Stop('{self.id}', '{self.stop_id_prefix}', '{self.stop_id}', '{self.wheelchair_boarding}', '{self.registered_on}', '{self.application_start}', '{self.application_end}', '{self.name}', '{self.positions}', '{self.url}'>"
 
     def to_dict(self):
         return {
@@ -353,6 +357,10 @@ class Route(Base):
         self.route_id = route_id
         self.registered_on = datetime.utcnow()
 
+    def __repr__(self):
+        return f"<Route('{self.id}', '{self.agency_code}', '{self.route_short_name}', '{self.route_long_name}', '{self.route_desc}', '{self.route_type}', '{self.route_url}', '{self.route_color}', '{self.route_text_color}', '{self.id_prefix}', '{self.route_id}', '{self.registered_on}')>"
+
+
 class Trip(Base):
     __tablename__ = 'trips'
     id               = Column(String(32), primary_key=True)
@@ -373,7 +381,7 @@ class Trip(Base):
     def __init__(self, route_code, service_code,
             trip_headsign, trip_short_name,
             direction_id, block_id, shape_code,
-            id_prefix, route_id):
+            id_prefix, trip_id):
         self.id = uuid.uuid4().hex
         self.route_code = route_code
         self.service_code = service_code
@@ -383,7 +391,7 @@ class Trip(Base):
         self.block_id = block_id
         self.shape_code = shape_code
         self.id_prefix = id_prefix
-        self.route_id = route_id
+        self.trip_id = trip_id
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
@@ -400,8 +408,12 @@ class ServiceID(Base):
     def __init__(self, id_prefix, service_id):
         self.id = uuid.uuid4().hex
         self.id_prefix = id_prefix
-        self.route_id = route_id
+        self.service_id = service_id
         self.registered_on = datetime.utcnow()
+
+        
+    def __repr__(self):
+        return f"<ServiceID('{self.id}', '{self.id_prefix}', '{self.service_id}', '{self.registered_on}')>"
 
 class Service(Base):
     __tablename__ = 'service'
@@ -434,6 +446,10 @@ class Service(Base):
         self.end_date      = end_date
         self.registered_on = datetime.utcnow()
 
+    def __repr__(self):
+        return f"<Service('{self.id}', '{self.service_code}', \'{''.join(['T' if i else 'F' for i in [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]])}\', '{self.start_date}', '{self.end_date}', '{self.registered_on}')>"
+
+        
 class ServiceDate(Base):
     __tablename__ = 'service_dates'
     id             = Column(String(32), primary_key=True)
@@ -443,12 +459,16 @@ class ServiceDate(Base):
     exception_type = Column(SmallInteger, nullable=False, index=True)
     registered_on  = Column(DateTime, nullable=False, index=True)
 
-    def __init__(self, service_code, date, exception_type):
+    def __init__(self, service_code, date, timezone, exception_type):
         self.id = uuid.uuid4().hex
         self.service_code = service_code
         self.date = date
+        self.timezone = timezone
         self.exception_type = exception_type
         self.registered_on = datetime.utcnow()
+
+    def __repr__(self):
+        return f"<ServiceDate('{self.id}', '{self.service_code}', '{self.date}', '{self.timezone}', '{self.exception_type}', '{self.registered_on}')>"
 
 class StopTime(Base):
     __tablename__ = 'stop_times'
@@ -463,6 +483,7 @@ class StopTime(Base):
     pickup_type         = Column(Integer, server_default='0', nullable=False, index=True)
     drop_off_type       = Column(Integer, server_default='0', nullable=False, index=True)
     shape_dist_traveled = Column(String(32), index=True)
+    id_prefix           = Column(String(255), index=True)
     registered_on       = Column(DateTime, nullable=False, index=True)
 
     position = relationship("StopPosition", backref="stop_time")
@@ -471,7 +492,7 @@ class StopTime(Base):
     def __init__(self, trip_code,
             arrival_time, departure_time, tz,
             stop_code, stop_sequence, stop_headsign,
-            pickup_type, drop_off_type, shape_dist_traveled, ):
+            pickup_type, drop_off_type, shape_dist_traveled, id_prefix):
         self.id = uuid.uuid4().hex
         self.trip_code = trip_code
         if arrival_time.isdigit():
@@ -505,4 +526,4 @@ class StopTime(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return "<StopTime('%s')>" % (self.id)
+        return f"<StopTime('{self.id}', '{self.trip_code}', '{self.stop_code}', '{self.stop_sequence}')>"

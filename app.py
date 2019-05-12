@@ -50,7 +50,7 @@ else:
 
 logger = getLogger(__name__)
 
-db_init(app)
+db_init(None, app)
 
 # jinja2のfilterを設定
 from bottle import BaseTemplate
