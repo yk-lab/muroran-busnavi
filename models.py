@@ -20,9 +20,9 @@ def Page():
 
 def db_init(config, app=None):
     engine = create_engine(
-        app.config['DB_URL'] if app else config['DB_URL'],
+        app.config['DB.URL'] if app else config['DB_URL'],
         pool_recycle=5, # 5sec
-        echo=app.config['DB_ECHO'] if app else config['DB_ECHO']
+        echo=app.config['DB.ECHO'] if app else config['DB_ECHO']
     )
     session = sessionmaker()
     session.configure(bind=engine)
