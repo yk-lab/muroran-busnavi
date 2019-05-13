@@ -477,7 +477,7 @@ class FareAttribute(Base):
     currency_type     = Column(String(3), nullable=False)
     payment_method    = Column(Integer, nullable=False)
     transfers         = Column(Integer, nullable=False)
-    agency_code       = Column(String(32), ForeignKey('companies.id'), nullable=False, index=True)
+    agency_code       = Column(String(32), ForeignKey('companies.id'), nullable=False)
     transfer_duration = Column(Integer, nullable=True)
     id_prefix         = Column(String(255), nullable=False, index=True)
     fare_id           = Column(String(255), nullable=False, index=True)
@@ -509,7 +509,7 @@ class FareAttribute(Base):
 class FareRule(Base):
     __tablename__ = 'fare_rules'
     id                = Column(String(32), primary_key=True)
-    fare_code         = Column(String(32), nullable=False, index=True)
+    fare_code         = Column(String(32), ForeignKey('fare_attributes.id'), nullable=False)
     route_code        = Column(String(32), nullable=True, index=True)
     origin_code       = Column(String(32), nullable=True, index=True)
     destination_code  = Column(String(32), nullable=True, index=True)
