@@ -519,13 +519,12 @@ class FareRule(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end   = Column(DateTime, nullable=True, index=True)
 
-    def __init__(self, fare_code, route_code, origin_code, destination_code, contains_code, application_start, application_end=None):
+    def __init__(self, fare_code, route_code, origin_code, destination_code, contains_code, id_prefix, application_start, application_end=None):
         self.id = uuid.uuid4().hex
         self.fare_code = fare_code
         self.route_code = route_code
         self.origin_code = origin_code
         self.destination_code = destination_code
-        self.agency_code = agency_code
         self.contains_code = contains_code
         self.id_prefix = id_prefix
         self.registered_on = datetime.utcnow()
@@ -535,7 +534,7 @@ class FareRule(Base):
     def __repr__(self):
         return f"<FareRule('{self.id}', '{self.fare_code}', '{self.route_code}',"\
                 f" '{self.origin_code}', '{self.destination_code}',"\
-                f" '{self.agency_code}', '{self.contains_code}',"\
+                f" '{self.contains_code}',"\
                 f" '{self.id_prefix}',"\
                 f" '{self.application_start}', '{self.application_end}', '{self.registered_on}')>"
 
