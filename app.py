@@ -7,7 +7,7 @@ import bottle
 from bottle import HTTPError
 from bottle import static_file, get, post, request, response
 from bottle import TEMPLATE_PATH, jinja2_template as template
-from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip
+from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip, FareRule
 from sqlalchemy import or_, desc, func
 from pytz import timezone
 from datetime import datetime, date, time
@@ -286,10 +286,20 @@ def stop_times(db):
         for t_stop_time in t_stop_times:
             st = db.query(StopTime).filter(StopTime.stop_code.in_(f_stop_positions), StopTime.trip_code == t_stop_time.trip_code, StopTime.stop_sequence < t_stop_time.stop_sequence, StopTime.departure_time > time_sec).order_by(StopTime.stop_sequence.desc()).first()
             if st != None and {"from": st, "to": t_stop_time} not in stop_times:
-#                logger.debug({"from": st, "to": t_stop_time})
-#                logger.debug(stop_times)
+               # logger.debug({"from": st, "to": t_stop_time})
+               # logger.debug(stop_times)
                 stop_times.append({"from": st, "to": t_stop_time})
-        return template('stop_times/list.tpl.html', stop_times = stop_times, params = request.params, autoescape=True)
+        fare = {(i.route_code, i.origin_code, i.destination_code): i for i in db.query(FareRule).filter(
+            FareRule.application_start <= dt.astimezone(timezone("UTC")),
+            or_(
+                FareRule.application_end == None,
+                FareRule.application_end >= dt.astimezone(timezone("UTC"))
+            ),
+            FareRule.origin_code.in_(f_stop_positions),
+            FareRule.destination_code.in_(t_stop_positions)
+        ).all()}
+        logger.info(fare)
+        return template('stop_times/list.tpl.html', stop_times=stop_times, fare=fare, params=request.params, autoescape=True)
     elif not request.params.from_q or not request.params.to_q:
       response.status = 302
       redirect_url = '{0}://{1}/'.format(
