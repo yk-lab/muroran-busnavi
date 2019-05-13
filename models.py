@@ -411,7 +411,6 @@ class ServiceID(Base):
         self.service_id = service_id
         self.registered_on = datetime.utcnow()
 
-        
     def __repr__(self):
         return f"<ServiceID('{self.id}', '{self.id_prefix}', '{self.service_id}', '{self.registered_on}')>"
 
@@ -449,7 +448,7 @@ class Service(Base):
     def __repr__(self):
         return f"<Service('{self.id}', '{self.service_code}', \'{''.join(['T' if i else 'F' for i in [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]])}\', '{self.start_date}', '{self.end_date}', '{self.registered_on}')>"
 
-        
+
 class ServiceDate(Base):
     __tablename__ = 'service_dates'
     id             = Column(String(32), primary_key=True)
@@ -469,6 +468,77 @@ class ServiceDate(Base):
 
     def __repr__(self):
         return f"<ServiceDate('{self.id}', '{self.service_code}', '{self.date}', '{self.timezone}', '{self.exception_type}', '{self.registered_on}')>"
+
+
+class FareAttribute(Base):
+    __tablename__ = 'fare_attributes'
+    id                = Column(String(32), primary_key=True)
+    price             = Column(Integer, nullable=False)
+    currency_type     = Column(String(3), nullable=False)
+    payment_method    = Column(Integer, nullable=False)
+    transfers         = Column(Integer, nullable=False)
+    agency_code       = Column(String(32), ForeignKey('companies.id'), nullable=False, index=True)
+    transfer_duration = Column(Integer, nullable=True)
+    id_prefix         = Column(String(255), nullable=False, index=True)
+    fare_id           = Column(String(255), nullable=False, index=True)
+    registered_on     = Column(DateTime, nullable=False, index=True)
+    application_start = Column(DateTime, nullable=False, index=True)
+    application_end   = Column(DateTime, nullable=True, index=True)
+
+    def __init__(self, price, currency_type, payment_method, transfers, agency_code, transfer_duration, id_prefix, fare_id, application_start, application_end=None):
+        self.id = uuid.uuid4().hex
+        self.price = price
+        self.currency_type = currency_type
+        self.payment_method = payment_method
+        self.transfers = transfers
+        self.agency_code = agency_code
+        self.transfer_duration = transfer_duration
+        self.id_prefix = id_prefix
+        self.fare_id = fare_id
+        self.registered_on = datetime.utcnow()
+        self.application_start = application_start
+        self.application_end = application_end
+
+    def __repr__(self):
+        return f"<FareAttribute('{self.id}', '{self.price}', '{self.currency_type}',"\
+                f" '{self.payment_method}', '{self.transfers}', '{self.agency_code}',"\
+                f" '{self.transfer_duration}', '{self.id_prefix}', '{self.fare_id}',"\
+                f" '{self.application_start}', '{self.application_end}', '{self.registered_on}')>"
+
+
+class FareRule(Base):
+    __tablename__ = 'fare_rules'
+    id                = Column(String(32), primary_key=True)
+    fare_code         = Column(String(32), nullable=False, index=True)
+    route_code        = Column(String(32), nullable=True, index=True)
+    origin_code       = Column(String(32), nullable=True, index=True)
+    destination_code  = Column(String(32), nullable=True, index=True)
+    contains_code     = Column(String(32), nullable=True, index=True)
+    id_prefix         = Column(String(255), nullable=False, index=True)
+    registered_on     = Column(DateTime, nullable=False, index=True)
+    application_start = Column(DateTime, nullable=False, index=True)
+    application_end   = Column(DateTime, nullable=True, index=True)
+
+    def __init__(self, fare_code, route_code, origin_code, destination_code, contains_code, application_start, application_end=None):
+        self.id = uuid.uuid4().hex
+        self.fare_code = fare_code
+        self.route_code = route_code
+        self.origin_code = origin_code
+        self.destination_code = destination_code
+        self.agency_code = agency_code
+        self.contains_code = contains_code
+        self.id_prefix = id_prefix
+        self.registered_on = datetime.utcnow()
+        self.application_start = application_start
+        self.application_end = application_end
+
+    def __repr__(self):
+        return f"<FareRule('{self.id}', '{self.fare_code}', '{self.route_code}',"\
+                f" '{self.origin_code}', '{self.destination_code}',"\
+                f" '{self.agency_code}', '{self.contains_code}',"\
+                f" '{self.id_prefix}',"\
+                f" '{self.application_start}', '{self.application_end}', '{self.registered_on}')>"
+
 
 class StopTime(Base):
     __tablename__ = 'stop_times'
