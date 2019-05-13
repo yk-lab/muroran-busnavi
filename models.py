@@ -518,6 +518,8 @@ class FareRule(Base):
     registered_on     = Column(DateTime, nullable=False, index=True)
     application_start = Column(DateTime, nullable=False, index=True)
     application_end   = Column(DateTime, nullable=True, index=True)
+    fare_attribute    = relationship("FareAttribute", backref="fare_rule")
+
 
     def __init__(self, fare_code, route_code, origin_code, destination_code, contains_code, id_prefix, application_start, application_end=None):
         self.id = uuid.uuid4().hex
