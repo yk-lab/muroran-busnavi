@@ -12,13 +12,13 @@
                 "stop_code": {{ stop.stop_data.now_name().code|tojson }},
                 "stop_desc": {{ stop.stop_data.now_name().desc|tojson }},
                 "positions": [
-                {%- set flag = 0 %}
+                {% set vars = {'flag': False} %}
                 {%- for sp in stop.stop_data.positions %}
-                    {%- if flag -%}
+                    {%- if vars.flag -%}
                     ,
                     {%- endif %}
                     {%- if sp.availability %}
-                    {%- set flag = 1 %}
+                    {%- if vars.update({'flag': True}) %}{%- endif %}
                     {
                         "lat": {{ sp.lat|float|tojson }},
                         "lng": {{ sp.lng|float|tojson }},

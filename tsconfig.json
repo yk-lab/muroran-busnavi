@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
         "isolatedModules": false,
@@ -14,7 +14,7 @@
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
-        "outDir": "static/js/"
+        "outDir": "static/dist/"
     },
     "exclude": [
         "node_modules",

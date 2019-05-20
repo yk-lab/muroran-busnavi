@@ -1,8 +1,11 @@
 "use strict";
+// import * as $ from 'jquery';
 import "bootstrap-rin";
+import "bootstrap";
+import "bootstrap-rin/dist/css/bootstrap.min.css";
 import "./index.scss";
-import * as $ from 'jquery';
 import { Feedback } from '@ivoviz/feedback.js';
+import "@ivoviz/feedback.js/dist/lib/feedback.css";
 
 import { getStopNameHistory, addStopNameHistory } from "./stopname_history_localstore"
 
@@ -15,23 +18,19 @@ $(document).ready(function() {
   $(".feedback-btn").click(function(){
     feedback.open();
   });
-});
 
-
-$(function () {
-    $(".stop-list.select-stop li a").on('click',function(){
-        const sid = $(this).closest("li.list-group-item").data("mbn-stop_id");
-        const name = $(this).closest("li.list-group-item").data("mbn-stop_name");
-        addStopNameHistory(sid, name);
-    });
-    // if ($("#stop_candidate").size()) {
-    if ($("#stop_candidate")) {
-        $("#stop_candidates").empty();
-        const his = getStopNameHistory();
-        const opt = $('<optgroup label="入力履歴">');
-        $.each(his["list"],function(){
-            opt.append($("<option/>").text(this["name"]));
-        });
-        $("#stop_candidate").append(opt);
-    }
+  $(".stop-list.select-stop li a").on('click',function(){
+      const sid = $(this).closest("li.list-group-item").data("mbn-stop_id");
+      const name = $(this).closest("li.list-group-item").data("mbn-stop_name");
+      addStopNameHistory(sid, name);
+  });
+  if ($("#stop_candidate")) {
+      $("#stop_candidate").empty();
+      const his = getStopNameHistory();
+      const opt = $('<optgroup label="入力履歴">');
+      $.each(his["list"],function(){
+          opt.append($("<option/>").text(this["name"]));
+      });
+      $("#stop_candidate").append(opt);
+  }
 });

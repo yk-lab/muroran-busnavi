@@ -1,15 +1,30 @@
+const webpack = require('webpack');
+
 module.exports = {
   // モード値を production に設定すると最適化された状態で、
   // development に設定するとソースマップ有効でJSファイルが出力される
-  mode: "production",
-  entry: "./static/src/main.ts",
-  // ファイルの出力設定
+  mode: "development",
+  entry: {
+    main: "./static/src/main.ts",
+    stop_times: "./static/src/stop_times.ts",
+    stop_search: "./static/src/stop_search.tsx"
+  },  // ファイルの出力設定
   output: {
     //  出力ファイルのディレクトリ名
     path: `${__dirname}/static/dist`,
     // 出力ファイル名
-    filename: "main.js"
+    filename: '[name].js',
   },
+  plugins: [
+    // bootstrap のコードから jQuery が直接見えるように
+    // http://getbootstrap.com/docs/4.0/getting-started/webpack/#importing-javascript
+    new webpack.ProvidePlugin({
+      $: "jquery",
+      jQuery: "jquery",
+      "window.jQuery": "jquery",
+      Popper: ["popper.js", "default"]
+    })
+  ],
   module: {
     rules: [
       // Sassファイルの読み込みとコンパイル
@@ -55,7 +70,17 @@ module.exports = {
       },
       {
         test: /\.(woff|woff2|eot|ttf|svg)$/,
-        loader: 'file-loader?name=../font/[name].[ext]'
+        // loader: 'file-loader?name=../font/[name].[ext]'
+        use: [
+            {
+                loader: 'file-loader',
+                options: {
+                    name: '[name].[ext]',
+                    outputPath : '../font/',
+                    publicPath : (url, resourcePath, context) => `/static/font/${url}`
+                }
+            }
+        ]
       }
     ]
   },

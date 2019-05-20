@@ -1,6 +1,6 @@
 {% extends "layout.tpl.html" %}
 {% block head_scripts %}
-  <script type="text/javascript" src="/static/js/stop_search.js"></script>
+  <script type="text/javascript" src="/static/dist/stop_search.js"></script>
 {% endblock %}
 {% block content %}
   <section class="jumbotron">
@@ -62,98 +62,5 @@
   </section>
 {% endblock %}
 {% block footer_scripts %}
-<script>
-  function initMap() {
-    // Create a map object and specify the DOM element for display.
-    center = {lat: 42.3690762, lng: 140.9911693};
-    var map = new google.maps.Map(document.getElementById('SearchMap'), {
-      center: center,
-      scrollwheel: false,
-      zoom: 12
-    });
-    $("a[href='#StopsSearchMap']").on('shown.bs.tab', function(){
-      google.maps.event.trigger(map, 'resize');
-      map.setCenter(center);
-    });
-    $("#SearchMapCenterJumpToNowPosition").click(function(){
-        searchMap_setCenterNowPosition(map);
-    });
-    var markers = new Array();
-    var search_circle = new google.maps.Circle({
-     fillColor: '#ff0000',
-     fillOpacity: 0.3,
-     map: map,
-     strokeColor: '#ff0000',
-     strokeOpacity: 0.8,
-     strokeWeight: 1
-    });
-    google.maps.event.addListener(map, 'idle', function(){
-        searchMap_search(map, markers, search_circle);
-    });
-  }
-  function searchMap_setCenterNowPosition(map) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-        function (pos) {
-            map.setZoom(18);
-            map.setCenter({lat: pos.coords.latitude, lng: pos.coords.longitude});
-        },
-        function (pos) {
-            window.alert("位置情報が取得できませんでした。");
-        });
-    } else {
-        window.alert("本ブラウザではGeolocationが使えません");
-    }
-  }
-
-  var setLinkClickEvent = function(lnk, marker){
-      lnk.bind('click', function(){
-          google.maps.event.trigger(marker, 'click');
-      });
-  }
-
-    function attachMessage(marker, msg) {
-        google.maps.event.addListener(marker, 'click', function(event) {
-          new google.maps.InfoWindow({
-            content: msg
-          }).open(marker.getMap(), marker);
-        });
-    }
-    function searchMap_search(map, markers, search_circle) {
-      $('#NearStopList').empty();
-      center = map.getCenter();
-      $.get("/api/v1.0/stop_search", {type: "latlng", lat: center.lat(), lng: center.lng()}, function(data){
-          list_unit = $('#NearStopList');
-          $.each(markers, function(){
-              $.each(this, function(){
-                  this.setMap(null);
-              });
-              this.length = 0;
-          });
-          markers.length = 0;
-          $.each(data.result.stops,function(index){
-              var lnk = $('<li>').append($('<a href="javascript:void(0)"/>').text(this.stop_name)).append(" (").append($('<a href="/stops/'+ this.stop_id +'" target="_blank"/>').text("→詳細情報")).append(") ");
-              list_unit.append(lnk);
-              marker = new Array();
-              var stop_name = this.stop_name;
-              var stop_id = this.stop_id;
-              $.each(this.positions,function(){
-                  var mark = new google.maps.Marker({
-                      label: ""+(index+1),
-                      position: new google.maps.LatLng(this.lat,this.lng),
-                      title: stop_name,
-                  });
-                  setLinkClickEvent(lnk, mark);
-                  mark.setMap(map);
-                  attachMessage(mark, stop_name + '<br/><a href="/stops/'+ stop_id +'" target="_blank">→詳細情報</a>');
-                  marker.push(mark);
-              });
-              markers.push(marker);
-          });
-          search_circle.setCenter(center);
-          search_circle.setRadius(data.query.radius);
-        });
-    }
-</script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9Mpuf4zHL1O_4RzrnNCz2GPc7YVUVdDU&callback=initMap" async defer></script>
+{# AIzaSyB9Mpuf4zHL1O_4RzrnNCz2GPc7YVUVdDU #}
 {% endblock %}

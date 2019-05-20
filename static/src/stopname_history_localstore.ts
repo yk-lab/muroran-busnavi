@@ -1,4 +1,4 @@
-import * as $ from 'jquery';
+// import * as $ from 'jquery';
 
 export function getStopNameHistory() {
     if(('localStorage' in window) && (window.localStorage !== null)) {
