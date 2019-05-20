@@ -56,11 +56,6 @@ db_init(None, app)
 from bottle import BaseTemplate
 BaseTemplate.settings.update({'filters': {'tojson': lambda content: json.dumps(content)}})
 
-# static Rin files
-@app.route('/assets/rin/<filename:path>')
-def static_css(filename):
-    return static_file(filename, root=ASSETS_DIR+"/Rin/dist")
-
 # static files
 @app.route('/static/<filename:path>')
 def static(filename):
