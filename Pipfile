@@ -21,6 +21,7 @@ MarkupSafe = "*"
 SQLAlchemy = "*"
 numpy = "*"
 mysqlclient = "*"
+google-cloud-storage = "*"
 
 [requires]
 python_version = "3.7"

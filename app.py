@@ -10,7 +10,7 @@ from bottle import TEMPLATE_PATH, jinja2_template as template
 from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip, FareRule
 from sqlalchemy import or_, desc, func
 from pytz import timezone
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta, timezone
 from json_encoders import StopJSONEncoder
 import json
 import markdown
@@ -25,6 +25,9 @@ from quadkey import QuadkeyUtils
 from lat_lng import dist_on_sphere
 from slacker import Slacker
 
+# Imports the Google Cloud client library
+from google.cloud import storage
+
 # index.pyが設置されているディレクトリの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # テンプレートファイルを設置するディレクトリのパスを指定
@@ -36,6 +39,9 @@ FEEDBACK_FILE_DIR = os.path.join(BASE_DIR, "uploaded/feedback-files")
 
 app = bottle.Bottle()
 bottle.BaseRequest.MEMFILE_MAX = 5000000
+
+# Instantiates a client
+storage_client = storage.Client()
 
 # 設定を読み込む
 with open('./config.json') as fp:
@@ -55,6 +61,8 @@ db_init(None, app)
 # jinja2のfilterを設定
 from bottle import BaseTemplate
 BaseTemplate.settings.update({'filters': {'tojson': lambda content: json.dumps(content)}})
+
+UTC = timezone(timedelta(hours=+0), 'UTC')
 
 # static files
 @app.route('/static/<filename:path>')
@@ -327,30 +335,62 @@ def stop_times(db):
 # Routing /feedback
 @app.post('/feedback/')
 def post_feedback():
-    data = json.loads(request.forms.data)
+    if not request.get_header('Referer').startswith('https://muroran.bus-navi.yk-lab.net/'):
+        # 投稿元が違うため
+        return HTTPError(404, 'page not found.')
+    if not request.get_header('User-Agent') or len(request.get_header('User-Agent')) < 10:
+        # user agent チェック
+        # ここは時間を見てしっかりやりたい
+        return HTTPError(404, 'page not found.')
+    # TODO: IP Address フィルタリング
+    # TODO: 串ハネ
 
-    prefix, body = data[1].split(",", 2)
-    matchOB = re.match(r"^data:([^;]+);(\w+)", prefix)
-    if matchOB.group(2) == "base64":
-        body = base64.b64decode(body)
-
-    ext = mimetypes.guess_extension(matchOB.group(1))
-    filename = str(uuid.uuid4().hex) + ext
-    with open(FEEDBACK_FILE_DIR + "/" + filename, "wb") as f:
-        f.write(body)
-
-    data[0]["UploadFilenames"] = [filename]
+    data = request.json
 
     client = pymongo.MongoClient(host=app.config['FEEDBACK.DB.HOST'], port=app.config['FEEDBACK.DB.PORT'])
     feedback_db = client.feedback
     fb = feedback_db.feedback
-    result = fb.insert_one({"type": "issue", "body": {"text": data[0]["Issue"], "files": data[0]["UploadFilenames"], "registered_on": datetime.utcnow()}, "status": "new"})
 
-    slack = Slacker(app.config['FEEDBACK.SLACK.TOKEN'])
-    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "Feedback: "+ str(result.inserted_id))
-    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], data[0]["Issue"])
-    slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "File: " + FEEDBACK_FILE_DIR + "/" + filename)
-    slack.files.upload(FEEDBACK_FILE_DIR + "/" + filename)
+    if fb.count_documents({'info.remote_addr': request.remote_addr, 'body.registered_on': {'$gt': datetime.now(UTC) - timedelta(hours=3)}}) > 5:
+        # 同一 IP 連投規制
+        return HTTPError(404, 'page not found.')
+    if fb.count_documents({'body.registered_on': {'$gt': datetime.now(UTC) - timedelta(seconds=5)}}) > 1:
+        # 全体の連投規制
+        return HTTPError(404, 'page not found.')
+
+    prefix, body = data['screenshot'].split(',', 2)
+    matchOB = re.match(r"^data:([^;]+);(\w+)", prefix)
+    if matchOB.group(2) == "base64":
+        body = base64.b64decode(body)
+
+    bucket_name = 'muroran-bn-feedback'
+    ext = mimetypes.guess_extension(matchOB.group(1))
+    filename = str(uuid.uuid4().hex) + ext
+    file_url = f'https://storage.cloud.google.com/{bucket_name}/{filename}'
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(filename)
+    blob.upload_from_string(body, content_type=matchOB.group(1))
+
+    result = fb.insert_one({
+        "type": "issue",
+        "body": {
+            "text": data.get('description', ''),
+            "file": filename,
+            "registered_on": datetime.utcnow()
+        },
+        "status": "new",
+        "info": {
+            "user-agent": request.get_header('User-Agent'),
+            "remote_addr": request.remote_addr
+        }
+    })
+
+    if app.config.get('FEEDBACK.SLACK.TOKEN'):
+        slack = Slacker(app.config['FEEDBACK.SLACK.TOKEN'])
+        slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "Feedback: "+ str(result.inserted_id))
+        if data.get('description', ''):
+            slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], data.get('description', ''))
+        slack.chat.post_message(app.config['FEEDBACK.SLACK.CHANNEL'], "File: " + file_url)
 
     return str(result.inserted_id)
 

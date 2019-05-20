@@ -10,7 +10,7 @@ import "@ivoviz/feedback.js/dist/lib/feedback.css";
 import { getStopNameHistory, addStopNameHistory } from "./stopname_history_localstore"
 
 const feedback = new Feedback({
-  footnote: 'あなたのフィードバック、追加情報が送られます。プライバシーポリシーと利用規約をご覧ください。',
+  footnote: 'あなたのフィードバック、追加情報が送られます。プライバシーポリシーと利用規約をご覧ください。<br/>現在，ライブラリ側のバグのため「Include screenshot」のチェックボックスを外してもスクリーンショットが投稿されます。あらかじめご了承ください。',
   endpoint: '/feedback/'
 });
 $(document).ready(function() {
