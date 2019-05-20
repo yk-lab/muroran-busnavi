@@ -1,0 +1,18 @@
+// .feedback-btn {
+//     display: inline-block;
+//     padding: 4px 10px 4px;
+//     margin-bottom: 0;
+//     vertical-align: middle;
+// }
+
+.feedback-btn.fixed {
+  position: fixed;
+  bottom: 0;
+  right: 15px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.w-100 {
+  width: 100%;
+}

@@ -15,8 +15,6 @@
     <meta name="yggdore-confirmation" content="rxSMi6BJThEsmoTl0YUCo48u2Hr6av3I" />
     {% block ogp %}
     {% endblock %}
-    <link rel="stylesheet" href="/assets/rin/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="/static/css/feedback.css"/>
     {% block css_files %}
     {% endblock %}
     <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
@@ -90,17 +88,17 @@
     <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/2.5.1/firebaseui.css" />
 
     <!-- jQuery http://jquery.com/ -->
-    <script type="text/javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.js"></script>
+    <!-- <script type="text/javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.js"></script> -->
     <!-- Bootstrap http://twitter.github.io/bootstrap/-->
-    <script type="text/javascript" src="/assets/rin/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/static/dist/main.js"></script>
     <!-- Underscore.js http://jashkenas.github.io/underscore/ -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script> -->
     <!-- Backbone.js http://backbonejs.org/ -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script> -->
     <!-- React.js -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.min.js"></script>
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.min.js"></script> -->
 
-    <script type="text/javascript" src="/static/js/main.js"></script>
+    <!-- <script type="text/javascript" src="/static/js/main.js"></script> -->
 
     <!-- Ads by Google -->
     <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
@@ -191,7 +189,7 @@
 
 
 
-<body>
+<body screen_capture_injected="true">
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -280,6 +278,7 @@
             <div class="body" itemscope itemtype="http://schema.org/Organization">
               <link itemprop="url" href="http://www.your-company-site.com">
               <ul>
+                <li>GitHub: <a itemprop="sameAs" href="https://github.com/yk-lab/muroran-busnavi" target="_blank">yk-lab/muroran-busnavi</a></li>
                 <li>Twitter:
                   <ul>
                       <li>運営公式: <a itemprop="sameAs" href="https://twitter.com/bus_navi" target="_blank">@bus_navi</a></li>
@@ -348,6 +347,8 @@
                           <li>年末年始特別ダイヤを含む</li>
                         </ul>
                       </li>
+                      <li>平成30年4月1日改正ダイヤ</li>
+                      <li>平成31年4月1日改正ダイヤ</li>
                     </ul>
                     </li>
                   </ul>
@@ -365,7 +366,7 @@
               <p class="discription">お問い合わせ/ご意見・ご要望</p>
             </div>
             <div class="body">
-              準備中。右下に表示されているフィードバックボタンよりおねがいします。
+              <button class="btn btn-primary feedback-btn w-100">フォームを開く</button>
             </div>
           </section>
           <section class="content">
@@ -429,26 +430,7 @@
   </noscript>
   <!-- End Twitter single-event website tag code -->
   {% block footer_scripts %}{% endblock %}
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/feedback.js/2012.10.17/feedback.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function() {
-      Feedback({
-          h2cPath:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js',
-          label: 'フィードバックを送る (αテスト)',
-          header: 'フィードバック (ver. α)',
-          url: '/feedback/',
-          nextLabel: '次へ',
-          reviewLabel: 'プレビュー',
-          sendLabel: '送る',
-          closeLabel: '閉じる',
-          messageSuccess: 'フィードバックの送信に成功しました。ご協力ありがとうございました！',
-          messageError: 'フィードバックの送信に失敗しました。もう一度送信するか、Twitter・Facebookを通じてフィードバックを送信のほどよろしくお願いします。'
-      });
-    });
-  </script>
-  <script type="text/javascript" src="/static/js/router.js"></script>
-  <script type="text/javascript" src="/static/js/stopname_history_localstore.js"></script>
+  <!-- <script type="text/javascript" src="/static/js/stopname_history_localstore.js"></script> -->
   <script>
     var ui = new firebaseui.auth.AuthUI(firebase.auth());
     var uiConfig = {
