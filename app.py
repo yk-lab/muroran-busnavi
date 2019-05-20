@@ -9,7 +9,6 @@ from bottle import static_file, get, post, request, response
 from bottle import TEMPLATE_PATH, jinja2_template as template
 from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip, FareRule
 from sqlalchemy import or_, desc, func
-from pytz import timezone
 from datetime import datetime, date, time, timedelta, timezone
 from json_encoders import StopJSONEncoder
 import json
@@ -63,6 +62,7 @@ from bottle import BaseTemplate
 BaseTemplate.settings.update({'filters': {'tojson': lambda content: json.dumps(content)}})
 
 UTC = timezone(timedelta(hours=+0), 'UTC')
+JST = timezone(timedelta(hours=+9), 'JST')
 
 # static files
 @app.route('/static/<filename:path>')
@@ -87,7 +87,7 @@ def page(filename):
 
 @app.route('/')
 def index():
-    jst_now = datetime.now(timezone("Asia/Tokyo"))
+    jst_now = datetime.now(JST)
     return template(
         'index.tpl.html',
         page={
@@ -238,39 +238,39 @@ def stop_times(db):
                 response.set_header('Location', redirect_url)
                 return response
 
-        dt_now = datetime.now(timezone('Asia/Tokyo'))
+        dt_now = datetime.now(JST)
         time_sec = -1
         time_obj = time(hour=dt_now.hour, minute=dt_now.minute)
         if request.params.time:
             t = request.params.time.split(":")
             if t[0] and t[1] and t[0].isdigit() and t[1].isdigit():
                 time_sec = int(t[0]) * 3600 + int(t[1]) * 60
-                time_obj = time(hour=int(t[0]), minute=int(t[1]), tzinfo=timezone('Asia/Tokyo'))
+                time_obj = time(hour=int(t[0]), minute=int(t[1]), tzinfo=JST)
         if time_sec < 0:
             time_sec = dt_now.hour * 3600 + dt_now.minute * 60
             # request.params.replace("time", "%d:%02d" % (dt_now.hour, dt_now.minute))
 
-        dt = datetime.now(timezone('Asia/Tokyo'))
+        dt = datetime.now(JST)
         if request.params.day:
             d = request.params.day.split("-")
             if d[0] and d[1] and d[2] and d[0].isdigit() and d[1].isdigit() and d[2].isdigit():
                 dt = datetime.combine(date(int(d[0]), int(d[1]), int(d[2])), time_obj)
         # ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        a_service_dates = db.query(ServiceDate).filter(ServiceDate.date == dt.astimezone(timezone("Asia/Tokyo")).date())
+        a_service_dates = db.query(ServiceDate).filter(ServiceDate.date == dt.astimezone(JST).date())
         if dt.weekday() == 0:
-            a_service_weekday = db.query(Service).filter(Service.monday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.monday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         elif dt.weekday() == 1:
-            a_service_weekday = db.query(Service).filter(Service.tuesday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.tuesday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         elif dt.weekday() == 2:
-            a_service_weekday = db.query(Service).filter(Service.wednesday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.wednesday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         elif dt.weekday() == 3:
-            a_service_weekday = db.query(Service).filter(Service.thursday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.thursday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         elif dt.weekday() == 4:
-            a_service_weekday = db.query(Service).filter(Service.friday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.friday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         elif dt.weekday() == 5:
-            a_service_weekday = db.query(Service).filter(Service.saturday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.saturday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
         else:
-            a_service_weekday = db.query(Service).filter(Service.sunday == 1, Service.start_date<=dt.astimezone(timezone("UTC")), Service.end_date >= dt.astimezone(timezone("UTC")))
+            a_service_weekday = db.query(Service).filter(Service.sunday == 1, Service.start_date<=dt.astimezone(UTC), Service.end_date >= dt.astimezone(UTC))
 
         a_service_code = {w.service_code: True for w in a_service_weekday}
         for s in a_service_dates:
@@ -293,10 +293,10 @@ def stop_times(db):
                # logger.debug(stop_times)
                 stop_times.append({"from": st, "to": t_stop_time})
         fare = {(i.route_code, i.origin_code, i.destination_code): i for i in db.query(FareRule).filter(
-            FareRule.application_start <= dt.astimezone(timezone("UTC")),
+            FareRule.application_start <= dt.astimezone(UTC),
             or_(
                 FareRule.application_end == None,
-                FareRule.application_end >= dt.astimezone(timezone("UTC"))
+                FareRule.application_end >= dt.astimezone(UTC)
             ),
             FareRule.origin_code.in_(f_stop_positions),
             FareRule.destination_code.in_(t_stop_positions)
