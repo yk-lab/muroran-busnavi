@@ -2369,6 +2369,11 @@ mixin-object@^2.0.1:
   dependencies:
     minimist "0.0.8"
 
+modaal@^0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/modaal/-/modaal-0.4.4.tgz#a82a5239a1193b7151ca4c58c83926af712748e0"
+  integrity sha512-3/0FhHt7TAmWXNiphxCFHct3RGklkR2xjo+w9zS+9WmUevwRBI3aNL1tBo77KRh0+Ys0i4UD1r32LNlUiMb/Cw==
+
 move-concurrently@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/move-concurrently/-/move-concurrently-1.0.1.tgz#be2c005fda32e0b29af1f05d7c4b33214c701f92"
