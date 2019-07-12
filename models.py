@@ -176,8 +176,8 @@ class StopName(Base):
     def __repr__(self):
         return "<StopName('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_code, self.code, self.name, self.desc, self.registered_on, self.application_start, self.application_end)
 
-    def availability(self):
-        if self.application_start < datetime.utcnow() and (self.application_end == None or self.application_end > datetime.utcnow()):
+    def availability(self, t=datetime.utcnow()):
+        if self.application_start <= t and (self.application_end == None or self.application_end > t):
             return True
         return False
 
@@ -190,6 +190,35 @@ class StopName(Base):
             "application_start": self.application_start.isoformat() if self.application_start != None else None,
             "application_end": self.application_end.isoformat() if self.application_end != None else None,
         }
+
+
+# class StopNameTranslation(Base):
+#     __tablename__ = 'stop_name_translations'
+#     id = Column(String(32), primary_key=True)
+#     stop_name_code = Column(String(32), ForeignKey('stop_names.id'), nullable=False)
+#     lang = Column(String(12), nullable=False, index=True)
+#     translation = Column(Unicode(255), nullable=False, index=True)
+#     registered_on = Column(DateTime, nullable=False, index=True)
+#     application_start = Column(DateTime, nullable=False, index=True)
+#     application_end = Column(DateTime, index=True)
+#
+#     def __init__(self, stop_code, code, name, desc, application_start, application_end):
+#         self.id = uuid.uuid4().hex
+#         self.stop_name_code = stop_name_code
+#         self.lang = lang
+#         self.translation = translation
+#         self.registered_on = datetime.utcnow()
+#         self.application_start = application_start
+#         self.application_end = application_end
+#
+#     def __repr__(self):
+#         return "<StopNameTranslation('%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_name_code, self.lang, self.translation, self.registered_on, self.application_start, self.application_end)
+#
+#     def availability(self, t=datetime.utcnow()):
+#         if self.application_start <= t and (self.application_end == None or self.application_end > t):
+#             return True
+#         return False
+
 
 class StopPosition(Base):
     __tablename__ = 'stop_positions'
