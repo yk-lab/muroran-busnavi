@@ -4,6 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+flake8 = "*"
+black = "==19.3b0"
 
 [packages]
 bottle = "*"
@@ -22,6 +24,7 @@ numpy = "*"
 mysqlclient = "*"
 google-cloud-storage = "*"
 pendulum = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.7"
