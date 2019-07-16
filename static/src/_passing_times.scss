@@ -1,0 +1,29 @@
+div.passing_times_modaal {
+  font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
+
+  ul.passing_times_modaal {
+    padding: 0px;
+    list-style: none;
+    line-height: 1.8;
+
+    li:before {
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      content: "\f3c5";
+      padding-right: 5px;
+    }
+
+    li.boarding_only:before {
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      content: "\f078";
+      padding-right: 5px;
+    }
+
+  }
+
+  p.passing_times_modaal_muted {
+    font-size: 0.9em;
+    color: #777;
+  }
+}

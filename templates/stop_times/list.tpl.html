@@ -28,70 +28,85 @@
 							</h3>
 						</div>
 						<div class="panel-body">
-							<p>
-								{% if stop_time.from.trip.route.route_short_name %}
-									[{{- stop_time.from.trip.route.route_short_name -}}]
-								{% endif %}
-								{{stop_time.from.trip.route.route_long_name}}
-								{% if stop_time.from.trip.route.route_desc %}
-									（{{stop_time.from.trip.route.route_desc}}）
-								{% endif %}
+							<div>
+								<div>
+									<time>{{ to_hhmmss(stop_time.from.departure_time) }}</time>
+									{% if stop_time.from.position.stop.now_name().code %}
+										[{{ stop_time.from.position.stop.now_name().code }}]
+									{% endif %}
+									{{ stop_time.from.position.stop.now_name().name }}
+									{% if stop_time.from.position.stop.now_name().desc %}
+										({{ stop_time.from.position.stop.now_name().desc }})
+									{% endif %}
+									{% if stop_time.from.position %}
+										（乗車位置:
+										{% if stop_time.from.position.code %}
+										[{{stop_time.from.position.code}}]
+										{% endif %}
+										{% if stop_time.from.position.subname %}
+										{{stop_time.from.position.subname}}
+										{% endif %}
+										{% if stop_time.from.position.desc %}
+										({{stop_time.from.position.desc}})
+										{% endif %}
+										{% if stop_time.from.position.id %}
+										<a href="/stops/{{stop_time.from.position.stop.id}}?from={{stop_time.from.position.id}}">&lt;地図で確認&gt;</a>
+										{% endif %}
+										）
+									{% endif %}
+								</div>
+								<div class="d-flex align-items-stretch" style="display: flex; align-items: center; margin: 4pt;">
+									<div class="align-self-center" style="padding: 8pt;">
+										<i class="glyphicon glyphicon-arrow-down" aria-hidden="true"></i>
+									</div>
+									<div>
+											{% if stop_time.from.trip.route.route_short_name %}
+												[{{- stop_time.from.trip.route.route_short_name -}}]
+											{% endif %}
+											{{stop_time.from.trip.route.route_long_name}}
+											{% if stop_time.from.trip.route.route_desc %}
+												（{{stop_time.from.trip.route.route_desc}}）
+											{% endif %}
+											<br>
+											{% if (stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id) in fare.keys() %}
+												運賃: {{fare[(stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id)].fare_attribute.price}}円
+											{% endif %}
+											所要時間: 約{{(stop_time.to.arrival_time - stop_time.from.departure_time)//60}}分
+											<a role="button" data-modaal-animation="fade" class="modaal-ajax btn btn-default btn-sm" href="/passing_times/{{stop_time.from.trip.id}}?origin={{stop_time.from.stop_sequence}}&destination={{stop_time.to.stop_sequence}}&datetime={{params.day}}T{{params.time}}%2B09:00">通過時刻</a>
+									</div>
+								</div>
+								<div>
+									<time>{{ to_hhmmss(stop_time.to.arrival_time) }}</time>
+									{% if stop_time.to.position.stop.now_name().code %}
+										[{{ stop_time.to.position.stop.now_name().code }}]
+									{% endif %}
+									{{ stop_time.to.position.stop.now_name().name }}
+									{% if stop_time.to.position.stop.now_name().desc %}
+										({{ stop_time.to.position.stop.now_name().desc }})
+									{% endif %}
+									{% if stop_time.to.position %}
+										（下車位置:
+										{% if stop_time.to.position.code %}
+										[{{stop_time.to.position.code}}]
+										{% endif %}
+										{% if stop_time.to.position.subname %}
+										{{stop_time.to.position.subname}}
+										{% endif %}
+										{% if stop_time.to.position.desc %}
+										({{stop_time.to.position.desc}})
+										{% endif %}
+										{% if stop_time.to.position.id %}
+										<a href="/stops/{{stop_time.to.position.stop.id}}?to={{stop_time.to.position.id}}">&lt;地図で確認&gt;</a>
+										{% endif %}
+										）
+									{% endif %}
+								</div>
+							</div>
+							<p class="text-muted">
+								<small>
+									道路状況や運用上などの理由により変更になる場合や特定の便のみ異なる場合がありますので、予めご了承ください。情報に誤りがありましたら、ご連絡をください。
+								</small>
 							</p>
-							<p>
-								乗車:
-								{% if stop_time.from.position.stop.name[0].code %}
-									[{{ stop_time.from.position.stop.name[0].code }}]
-								{% endif %}
-								{{ stop_time.from.position.stop.name[0].name }}
-								{% if stop_time.from.position.stop.name[0].desc %}
-									({{ stop_time.from.position.stop.name[0].desc }})
-								{% endif %}
-								→
-								下車:
-								{% if stop_time.to.position.stop.name[0].code %}
-									[{{ stop_time.to.position.stop.name[0].code }}]
-								{% endif %}
-								{{ stop_time.to.position.stop.name[0].name }}
-								{% if stop_time.to.position.stop.name[0].desc %}
-									({{ stop_time.to.position.stop.name[0].desc }})
-								{% endif %}
-							</p>
-
-							<ul>
-								<li>
-									{% if (stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id) in fare.keys() %}
-										運賃: {{fare[(stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id)].fare_attribute.price}}円
-									{% endif %}
-								</li>
-								<li>
-									乗車位置:
-									{% if stop_time.from.position.code %}
-									[{{stop_time.from.position.code}}]
-									{% endif %}
-									{% if stop_time.from.position.subname %}
-									{{stop_time.from.position.subname}}
-									{% endif %}
-									{% if stop_time.from.position.desc %}
-									({{stop_time.from.position.desc}})
-									{% endif %}
-									<a href="/stops/{{stop_time.from.position.stop.id}}?from={{stop_time.from.position.id}}">&lt;地図で確認&gt;</a>
-								</li>
-								<li>
-									下車位置:
-									{% if stop_time.to.position.code %}
-									[{{stop_time.to.position.code}}]
-									{% endif %}
-									{% if stop_time.to.position.subname %}
-									{{stop_time.to.position.subname}}
-									{% endif %}
-									{% if stop_time.to.position.desc %}
-									({{stop_time.to.position.desc}})
-									{% endif %}
-									<a href="/stops/{{stop_time.to.position.stop.id}}?to={{stop_time.to.position.id}}">&lt;地図で確認&gt;</a>
-								</li>
-							</ul>
-							<p class="text-muted"><small>乗車位置・下車位置は道路状況や運用上などの理由により変更になる場合や特定の便のみ異なる場合がありますので、予めご了承ください。
-									情報に間違いがありましたら、連絡をくださるようご協力のほどお願いします。</small></p>
 							<p>
 								{% if stop_time.from.trip.service_code == "2ed19e8dd96311e6be760242ac130002" %}
 								平日ダイヤ

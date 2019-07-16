@@ -1,4 +1,6 @@
 "use strict";
+import "modaal";
+import "modaal/dist/css/modaal.min.css";
 // import * as $ from 'jquery';
 
 $(function(){
@@ -23,5 +25,13 @@ $(function(){
     });
     $('input[name="to_q"]').change(function() {
         $('input[name="t_id"]').val("");
+    });
+
+    (<any>$('.stop-list .modaal-ajax')).modaal({
+      type: 'ajax',
+      loading_content: 'Loading content, please wait.',
+      ajax_success: function(a) {
+        
+      }
     });
 });
