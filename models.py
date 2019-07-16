@@ -1,10 +1,10 @@
-from bottle import request
-from bottle.ext import sqlalchemy
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Date, DateTime, String, Unicode, Boolean, Integer, BigInteger, Float, DECIMAL, ForeignKey, func, or_, desc, SmallInteger
+from sqlalchemy import Column, Date, DateTime, String, Unicode, Boolean,\
+                       Integer, BigInteger, DECIMAL, ForeignKey, SmallInteger
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from bottle.ext import sqlalchemy
 from datetime import datetime
 import uuid
 import pygeohash as geohash
@@ -13,15 +13,17 @@ import re
 
 Base = declarative_base()
 
+
 def Page():
     def __init__(self, **kwargs):
         self.title = kwargs.get('title', "Not Defined")
         self.discription = kwargs.get('discription', None)
 
+
 def db_init(config, app=None):
     engine = create_engine(
         app.config['DB.URL'] if app else config['DB_URL'],
-        pool_recycle=5, # 5sec
+        pool_recycle=5,  # 5sec
         echo=app.config['DB.ECHO'] if app else config['DB_ECHO']
     )
     session = sessionmaker()
@@ -37,6 +39,7 @@ def db_init(config, app=None):
         )
     else:
         return session
+
 
 class Company(Base):
     __tablename__ = 'companies'
@@ -56,7 +59,9 @@ class Company(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return "<Company('%s', '%d', '%s', '%s')>" % (self.id, self.code, self.name, self.address)
+        return f"<Company('{self.id}', '{self.code}', "\
+               f"'{self.name}', '{self.address}')>"
+
 
 class CompanyName(Base):
     __tablename__ = 'company_names'
@@ -75,7 +80,10 @@ class CompanyName(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return "<CompanyName('%d', '%s', '%s', '%s', '%s')>" % (self.id, self.company_id, self.name, self.registered_on, self.application_start)
+        return "<CompanyName('%d', '%s', '%s', '%s', '%s')>" % (
+            self.id, self.company_id, self.name,
+            self.registered_on, self.application_start)
+
 
 class CompanyAddress(Base):
     __tablename__ = 'company_addresses'
@@ -88,7 +96,8 @@ class CompanyAddress(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end = Column(DateTime, index=True)
 
-    def __init__(self, company_id, region, city, address, application_start, application_end):
+    def __init__(self, company_id, region, city, address,
+                 application_start, application_end):
         self.company_id = company_id
         self.region = region
         self.city = city
@@ -98,7 +107,9 @@ class CompanyAddress(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return "<CompanyName('%d', '%s', '%s', '%s', '%s', '%s', '%s')>" % (self.id, self.company_id, self.region, self.city, self.address, self.registered_on, self.application_start)
+        return "<CompanyName('%d', '%s', '%s', '%s', '%s', '%s', '%s')>" % (
+            self.id, self.company_id, self.region, self.city, self.address,
+            self.registered_on, self.application_start)
 
 
 class Stop(Base):
@@ -111,17 +122,13 @@ class Stop(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end = Column(DateTime, index=True)
     name = relationship("StopName",
-            # primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start < now(), or_(StopName.application_end != None, StopName.application_end > now()))",
-#             primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start <= '%s')" % datetime.utcnow().isoformat(),
-#            primaryjoin="and_(Stop.id == StopName.stop_code, StopName.application_start <= '%s')" % datetime.utcnow().isoformat(),
-#             order_by=desc("stop_names.application_start"),
-            order_by="desc(StopName.application_start)",
-#            uselist=False,
-            backref="stop")
+                        order_by="desc(StopName.application_start)",
+                        backref="stop")
     positions = relationship("StopPosition", backref="stop")
     url = relationship("StopUrl", backref="stop")
 
-    def __init__(self, stop_id_prefix, stop_id, wheelchair_boarding, application_start, application_end):
+    def __init__(self, stop_id_prefix, stop_id, wheelchair_boarding,
+                 application_start, application_end):
         self.id = uuid.uuid4().hex
         self.stop_id_prefix = stop_id_prefix
         self.stop_id = stop_id
@@ -137,20 +144,25 @@ class Stop(Base):
                 return stopname
         return None
 
-
     def __repr__(self):
-        return f"<Stop('{self.id}', '{self.stop_id_prefix}', '{self.stop_id}', '{self.wheelchair_boarding}', '{self.registered_on}', '{self.application_start}', '{self.application_end}', '{self.name}', '{self.positions}', '{self.url}'>"
+        return f"<Stop('{self.id}', "\
+               f"'{self.stop_id_prefix}', '{self.stop_id}', "\
+               f"'{self.wheelchair_boarding}', '{self.registered_on}', "\
+               f"'{self.application_start}', '{self.application_end}', "\
+               f"'{self.name}', '{self.positions}', '{self.url}'>"
 
     def to_dict(self):
         return {
             "id": self.id,
             "wheelchair_boarding": self.wheelchair_boarding,
-            "application_start": self.application_start.isoformat() if self.application_start != None else None,
-            "application_end": self.application_end.isoformat() if self.application_end != None else None,
+            "application_start": self.application_start.isoformat(),
+            "application_end": self.application_end.isoformat()
+            if self.application_end is not None else None,
             "name": list([i.to_dict() for i in self.name]),
-            "positions": list([position.to_dict() for position in self.positions]),
+            "positions": list([p.to_dict() for p in self.positions]),
             "url": list([i.to_dict() for i in self.url]),
         }
+
 
 class StopName(Base):
     __tablename__ = 'stop_names'
@@ -163,7 +175,8 @@ class StopName(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end = Column(DateTime, index=True)
 
-    def __init__(self, stop_code, code, name, desc, application_start, application_end):
+    def __init__(self, stop_code, code, name, desc,
+                 application_start, application_end):
         self.id = uuid.uuid4().hex
         self.stop_code = stop_code
         self.code = code
@@ -174,10 +187,14 @@ class StopName(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return "<StopName('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_code, self.code, self.name, self.desc, self.registered_on, self.application_start, self.application_end)
+        return "<StopName('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (
+            self.id, self.stop_code, self.code, self.name, self.desc,
+            self.registered_on, self.application_start, self.application_end)
 
     def availability(self, t=datetime.utcnow()):
-        if self.application_start <= t and (self.application_end == None or self.application_end > t):
+        if self.application_start <= t and (
+            self.application_end is None or self.application_end > t
+        ):
             return True
         return False
 
@@ -187,22 +204,24 @@ class StopName(Base):
             "stop_code": self.stop_code,
             "name": self.name,
             "desc": self.desc,
-            "application_start": self.application_start.isoformat() if self.application_start != None else None,
-            "application_end": self.application_end.isoformat() if self.application_end != None else None,
-        }
+            "application_start": self.application_start.isoformat(),
+            "application_end": self.application_end.isoformat()
+            if self.application_end is not None else None}
 
 
 # class StopNameTranslation(Base):
 #     __tablename__ = 'stop_name_translations'
 #     id = Column(String(32), primary_key=True)
-#     stop_name_code = Column(String(32), ForeignKey('stop_names.id'), nullable=False)
+#     stop_name_code = Column(String(32), ForeignKey('stop_names.id'),
+#                             nullable=False)
 #     lang = Column(String(12), nullable=False, index=True)
 #     translation = Column(Unicode(255), nullable=False, index=True)
 #     registered_on = Column(DateTime, nullable=False, index=True)
 #     application_start = Column(DateTime, nullable=False, index=True)
 #     application_end = Column(DateTime, index=True)
 #
-#     def __init__(self, stop_code, code, name, desc, application_start, application_end):
+#     def __init__(self, stop_code, code, name, desc,
+#                  application_start, application_end):
 #         self.id = uuid.uuid4().hex
 #         self.stop_name_code = stop_name_code
 #         self.lang = lang
@@ -212,10 +231,15 @@ class StopName(Base):
 #         self.application_end = application_end
 #
 #     def __repr__(self):
-#         return "<StopNameTranslation('%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_name_code, self.lang, self.translation, self.registered_on, self.application_start, self.application_end)
+#         return "<StopNameTranslation('%s', '%s', '%s', '%s', '%s', "\
+#                "'%s', '%s'>" % (self.id, self.stop_name_code, self.lang,
+#                                 self.translation, self.registered_on,
+#                                 self.application_start, self.application_end)
 #
 #     def availability(self, t=datetime.utcnow()):
-#         if self.application_start <= t and (self.application_end == None or self.application_end > t):
+#         if self.application_start <= t and (
+#                self.application_end == None or self.application_end > t
+#         ):
 #             return True
 #         return False
 
@@ -238,7 +262,8 @@ class StopPosition(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end = Column(DateTime, index=True)
 
-    def __init__(self, stop_code, stop_id_prefix, stop_id, code, subname, desc, lat, lng, application_start, application_end):
+    def __init__(self, stop_code, stop_id_prefix, stop_id, code, subname, desc,
+                 lat, lng, application_start, application_end):
         self.id = uuid.uuid4().hex
         self.stop_code = stop_code
         self.stop_id_prefix = stop_id_prefix
@@ -256,10 +281,18 @@ class StopPosition(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return "<StopPosition('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'>" % (self.id, self.stop_code, self.stop_id_prefix, self.stop_id, self.code, self.subname, self.desc, self.lat, self.lng, self.geohash, self.quadkey, self.registered_on, self.application_start, self.application_end)
+        return "<StopPosition('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',"\
+               " '%s', '%s', '%s', '%s', '%s', '%s'>" % (
+                self.id, self.stop_code, self.stop_id_prefix, self.stop_id,
+                self.code, self.subname, self.desc, self.lat, self.lng,
+                self.geohash, self.quadkey, self.registered_on,
+                self.application_start, self.application_end)
 
     def availability(self):
-        if self.application_start < datetime.utcnow() and (self.application_end == None or self.application_end > datetime.utcnow()):
+        if self.application_start < datetime.utcnow() and (
+            self.application_end is None
+            or self.application_end > datetime.utcnow()
+        ):
             return True
         return False
 
@@ -273,9 +306,11 @@ class StopPosition(Base):
             "lng": "%s" % self.lng,
             "geohash": self.geohash,
             "quadkey": self.quadkey,
-            "application_start": self.application_start.isoformat() if self.application_start != None else None,
-            "application_end": self.application_end.isoformat() if self.application_end != None else None,
+            "application_start": self.application_start.isoformat(),
+            "application_end": self.application_end.isoformat()
+            if self.application_end is not None else None,
         }
+
 
 class StopUrl(Base):
     __tablename__ = 'stop_urls'
@@ -288,7 +323,8 @@ class StopUrl(Base):
     application_start = Column(DateTime, nullable=False, index=True)
     application_end = Column(DateTime, index=True)
 
-    def __init__(self, stop_code, stop_id_prefix, stop_id, url, application_start, application_end):
+    def __init__(self, stop_code, stop_id_prefix, stop_id, url,
+                 application_start, application_end):
         self.id = uuid.uuid4().hex
         self.stop_code = stop_code
         self.stop_id_prefix = stop_id_prefix
@@ -303,9 +339,11 @@ class StopUrl(Base):
             "id": self.id,
             "stop_code": self.stop_code,
             "url": self.url,
-            "application_start": self.application_start.isoformat() if self.application_start != None else None,
-            "application_end": self.application_end.isoformat() if self.application_end != None else None,
+            "application_start": self.application_start.isoformat(),
+            "application_end": self.application_end.isoformat()
+            if self.application_end is not None else None,
         }
+
 
 class UserPermission(Base):
     __tablename__ = 'user_permissions'
@@ -315,23 +353,23 @@ class UserPermission(Base):
     registered_on = Column(DateTime, nullable=False)
     application_start = Column(DateTime, nullable=False, index=True)
 
-    PERMITTED_COMPANY_ALL   = 0x000000F
-    PERMITTED_STOP_ALL      = 0x00000F0
+    PERMITTED_COMPANY_ALL = 0x000000F
+    PERMITTED_STOP_ALL = 0x00000F0
     PERMITTED_TIMETABLE_ALL = 0x0000F00
-    PERMITTED_ROUTE_ALL     = 0x000F000
-    PERMITTED_TRIP_ALL      = 0x00F0000
-    PERMITTED_ACCOUNT_ALL   = 0x0F00000
-    PERMITTED_CONTROL_ALL   = 0xF000000
+    PERMITTED_ROUTE_ALL = 0x000F000
+    PERMITTED_TRIP_ALL = 0x00F0000
+    PERMITTED_ACCOUNT_ALL = 0x0F00000
+    PERMITTED_CONTROL_ALL = 0xF000000
 
-    COMPANY_PERMISSION   = 1;
-    STOP_PERMISSION      = 2;
-    TIMETABLE_PERMISSION = 3;
-    ROUTE_PERMISSION     = 4;
-    TRIP_PERMISSION      = 5;
-    ACCOUNT_PERMISSION   = 6;
-    CONTROL_PERMISSION   = 7;
+    COMPANY_PERMISSION = 1
+    STOP_PERMISSION = 2
+    TIMETABLE_PERMISSION = 3
+    ROUTE_PERMISSION = 4
+    TRIP_PERMISSION = 5
+    ACCOUNT_PERMISSION = 6
+    CONTROL_PERMISSION = 7
 
-    PERMIT_VIEW   = 0b0001
+    PERMIT_VIEW = 0b0001
     PERMIT_INSERT = 0b0010
     PERMIT_UPDATE = 0b0100
     PERMIT_REMOVE = 0b1000
@@ -343,36 +381,42 @@ class UserPermission(Base):
         self.application_start = application_start
 
     def _shift(self, digit):
-        return 4 * (degit - 1)
+        return 4 * (digit - 1)
 
     def get_permission(self):
         return self.permission
 
     def permitted_stop_insert(self):
-        return True if (get_permission & (PERMIT_INSERT << _shift(STOP_PERMISSION))) != 0 else False
+        return True if (self.get_permission & (
+            self.PERMIT_INSERT << self._shift(self.STOP_PERMISSION)
+        )) != 0 else False
 
     def permitted_stop_update(self):
-        return True if (get_permission & (PERMIT_UPDATE << _shift(STOP_PERMISSION))) != 0 else False
+        return True if (self.get_permission & (
+            self.PERMIT_UPDATE << self._shift(self.STOP_PERMISSION)
+        )) != 0 else False
+
 
 class Route(Base):
     __tablename__ = 'routes'
-    id               = Column(String(32), primary_key=True)
-    agency_code      = Column(String(32), ForeignKey('companies.id'), nullable=False)
+    id = Column(String(32), primary_key=True)
+    agency_code = Column(String(32), ForeignKey('companies.id'),
+                         nullable=False)
     route_short_name = Column(Unicode(255), index=True)
-    route_long_name  = Column(Unicode(255), index=True)
-    route_desc       = Column(Unicode(255), index=True)
-    route_type       = Column(Integer, nullable=False, index=True)
-    route_url        = Column(Unicode(255))
-    route_color      = Column(Unicode(255))
+    route_long_name = Column(Unicode(255), index=True)
+    route_desc = Column(Unicode(255), index=True)
+    route_type = Column(Integer, nullable=False, index=True)
+    route_url = Column(Unicode(255))
+    route_color = Column(Unicode(255))
     route_text_color = Column(Unicode(255))
-    id_prefix        = Column(String(255), index=True)
-    route_id         = Column(String(255), index=True)
-    registered_on    = Column(DateTime, nullable=False, index=True)
+    id_prefix = Column(String(255), index=True)
+    route_id = Column(String(255), index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
 
     def __init__(self, agency_code,
-            route_short_name, route_long_name, route_desc,
-            route_type, route_url, route_color, route_text_color,
-            id_prefix, route_id):
+                 route_short_name, route_long_name, route_desc,
+                 route_type, route_url, route_color, route_text_color,
+                 id_prefix, route_id):
         self.id = uuid.uuid4().hex
         self.agency_code = agency_code
         self.route_short_name = agency_code
@@ -387,30 +431,36 @@ class Route(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return f"<Route('{self.id}', '{self.agency_code}', '{self.route_short_name}', '{self.route_long_name}', '{self.route_desc}', '{self.route_type}', '{self.route_url}', '{self.route_color}', '{self.route_text_color}', '{self.id_prefix}', '{self.route_id}', '{self.registered_on}')>"
+        return f"<Route('{self.id}', '{self.agency_code}', "\
+               f"'{self.route_short_name}', '{self.route_long_name}', "\
+               f"'{self.route_desc}', '{self.route_type}', "\
+               f"'{self.route_url}', "\
+               f"'{self.route_color}', '{self.route_text_color}', "\
+               f"'{self.id_prefix}', '{self.route_id}', "\
+               f"'{self.registered_on}')>"
 
 
 class Trip(Base):
     __tablename__ = 'trips'
-    id               = Column(String(32), primary_key=True)
-    route_code       = Column(String(32), ForeignKey('routes.id'), nullable=False)
-    service_code     = Column(String(32), ForeignKey('service_id.id'), nullable=False)
-    trip_headsign    = Column(Unicode(255), index=True)
-    trip_short_name  = Column(Unicode(255), index=True)
-    direction_id     = Column(String(255), index=True)
-    block_id         = Column(String(32), index=True)
-    shape_code       = Column(String(32), index=True)
-    id_prefix        = Column(String(255), index=True)
-    trip_id          = Column(String(255), index=True)
-    registered_on    = Column(DateTime, nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    route_code = Column(String(32), ForeignKey('routes.id'), nullable=False)
+    service_code = Column(String(32), ForeignKey('service_id.id'),
+                          nullable=False)
+    trip_headsign = Column(Unicode(255), index=True)
+    trip_short_name = Column(Unicode(255), index=True)
+    direction_id = Column(String(255), index=True)
+    block_id = Column(String(32), index=True)
+    shape_code = Column(String(32), index=True)
+    id_prefix = Column(String(255), index=True)
+    trip_id = Column(String(255), index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
 
     route = relationship("Route", backref="trip")
 
-
     def __init__(self, route_code, service_code,
-            trip_headsign, trip_short_name,
-            direction_id, block_id, shape_code,
-            id_prefix, trip_id):
+                 trip_headsign, trip_short_name,
+                 direction_id, block_id, shape_code,
+                 id_prefix, trip_id):
         self.id = uuid.uuid4().hex
         self.route_code = route_code
         self.service_code = service_code
@@ -424,15 +474,15 @@ class Trip(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return "<Trip('%s')>" % (self.id)
+        return f"<Trip('{self.id}')>"
 
 
 class ServiceID(Base):
     __tablename__ = 'service_id'
-    id               = Column(String(32), primary_key=True)
-    id_prefix        = Column(String(255), index=True)
-    service_id       = Column(String(255), index=True)
-    registered_on    = Column(DateTime, nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    id_prefix = Column(String(255), index=True)
+    service_id = Column(String(255), index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
 
     def __init__(self, id_prefix, service_id):
         self.id = uuid.uuid4().hex
@@ -441,51 +491,63 @@ class ServiceID(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return f"<ServiceID('{self.id}', '{self.id_prefix}', '{self.service_id}', '{self.registered_on}')>"
+        return f"<ServiceID('{self.id}', "\
+               f"'{self.id_prefix}', '{self.service_id}', "\
+               f"'{self.registered_on}')>"
+
 
 class Service(Base):
     __tablename__ = 'service'
-    id            = Column(String(32), primary_key=True)
-    service_code  = Column(String(32), ForeignKey('service_id.id'), nullable=False)
-    monday        = Column(Boolean, nullable=False, index=True)
-    tuesday       = Column(Boolean, nullable=False, index=True)
-    wednesday     = Column(Boolean, nullable=False, index=True)
-    thursday      = Column(Boolean, nullable=False, index=True)
-    friday        = Column(Boolean, nullable=False, index=True)
-    saturday      = Column(Boolean, nullable=False, index=True)
-    sunday        = Column(Boolean, nullable=False, index=True)
-    start_date    = Column(DateTime, nullable=False, index=True)
-    end_date      = Column(DateTime, nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    service_code = Column(String(32), ForeignKey('service_id.id'),
+                          nullable=False)
+    monday = Column(Boolean, nullable=False, index=True)
+    tuesday = Column(Boolean, nullable=False, index=True)
+    wednesday = Column(Boolean, nullable=False, index=True)
+    thursday = Column(Boolean, nullable=False, index=True)
+    friday = Column(Boolean, nullable=False, index=True)
+    saturday = Column(Boolean, nullable=False, index=True)
+    sunday = Column(Boolean, nullable=False, index=True)
+    start_date = Column(DateTime, nullable=False, index=True)
+    end_date = Column(DateTime, nullable=False, index=True)
     registered_on = Column(DateTime, nullable=False, index=True)
 
     def __init__(self, service_code,
-            monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-            start_date, end_date):
+                 monday, tuesday, wednesday, thursday, friday,
+                 saturday, sunday,
+                 start_date, end_date):
         self.id = uuid.uuid4().hex
-        self.service_code  = service_code
-        self.monday        = monday
-        self.tuesday       = tuesday
-        self.wednesday     = wednesday
-        self.thursday      = thursday
-        self.friday        = friday
-        self.saturday      = saturday
-        self.sunday        = sunday
-        self.start_date    = start_date
-        self.end_date      = end_date
+        self.service_code = service_code
+        self.monday = monday
+        self.tuesday = tuesday
+        self.wednesday = wednesday
+        self.thursday = thursday
+        self.friday = friday
+        self.saturday = saturday
+        self.sunday = sunday
+        self.start_date = start_date
+        self.end_date = end_date
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return f"<Service('{self.id}', '{self.service_code}', \'{''.join(['T' if i else 'F' for i in [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]])}\', '{self.start_date}', '{self.end_date}', '{self.registered_on}')>"
+        service_weekday = ''.join(['T' if i else 'F' for i in [
+            self.monday, self.tuesday, self.wednesday,
+            self.thursday, self.friday, self.saturday, self.sunday]])
+        return f"<Service('{self.id}', '{self.service_code}', "\
+               f"'{service_weekday}', "\
+               f"'{self.start_date}', '{self.end_date}', "\
+               f"'{self.registered_on}')>"
 
 
 class ServiceDate(Base):
     __tablename__ = 'service_dates'
-    id             = Column(String(32), primary_key=True)
-    service_code   = Column(String(32), ForeignKey('service_id.id'), nullable=False)
-    date           = Column(Date, nullable=False, index=True)
-    timezone       = Column(String(255), nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    service_code = Column(String(32), ForeignKey('service_id.id'),
+                          nullable=False)
+    date = Column(Date, nullable=False, index=True)
+    timezone = Column(String(255), nullable=False, index=True)
     exception_type = Column(SmallInteger, nullable=False, index=True)
-    registered_on  = Column(DateTime, nullable=False, index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
 
     def __init__(self, service_code, date, timezone, exception_type):
         self.id = uuid.uuid4().hex
@@ -496,25 +558,30 @@ class ServiceDate(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return f"<ServiceDate('{self.id}', '{self.service_code}', '{self.date}', '{self.timezone}', '{self.exception_type}', '{self.registered_on}')>"
+        return f"<ServiceDate('{self.id}', '{self.service_code}',"\
+               f" '{self.date}', '{self.timezone}', '{self.exception_type}',"\
+               f" '{self.registered_on}')>"
 
 
 class FareAttribute(Base):
     __tablename__ = 'fare_attributes'
-    id                = Column(String(32), primary_key=True)
-    price             = Column(Integer, nullable=False)
-    currency_type     = Column(String(3), nullable=False)
-    payment_method    = Column(Integer, nullable=False)
-    transfers         = Column(Integer, nullable=False)
-    agency_code       = Column(String(32), ForeignKey('companies.id'), nullable=False)
+    id = Column(String(32), primary_key=True)
+    price = Column(Integer, nullable=False)
+    currency_type = Column(String(3), nullable=False)
+    payment_method = Column(Integer, nullable=False)
+    transfers = Column(Integer, nullable=False)
+    agency_code = Column(String(32), ForeignKey('companies.id'),
+                         nullable=False)
     transfer_duration = Column(Integer, nullable=True)
-    id_prefix         = Column(String(255), nullable=False, index=True)
-    fare_id           = Column(String(255), nullable=False, index=True)
-    registered_on     = Column(DateTime, nullable=False, index=True)
+    id_prefix = Column(String(255), nullable=False, index=True)
+    fare_id = Column(String(255), nullable=False, index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
     application_start = Column(DateTime, nullable=False, index=True)
-    application_end   = Column(DateTime, nullable=True, index=True)
+    application_end = Column(DateTime, nullable=True, index=True)
 
-    def __init__(self, price, currency_type, payment_method, transfers, agency_code, transfer_duration, id_prefix, fare_id, application_start, application_end=None):
+    def __init__(self, price, currency_type, payment_method, transfers,
+                 agency_code, transfer_duration, id_prefix, fare_id,
+                 application_start, application_end=None):
         self.id = uuid.uuid4().hex
         self.price = price
         self.currency_type = currency_type
@@ -529,28 +596,33 @@ class FareAttribute(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return f"<FareAttribute('{self.id}', '{self.price}', '{self.currency_type}',"\
-                f" '{self.payment_method}', '{self.transfers}', '{self.agency_code}',"\
-                f" '{self.transfer_duration}', '{self.id_prefix}', '{self.fare_id}',"\
-                f" '{self.application_start}', '{self.application_end}', '{self.registered_on}')>"
+        return f"<FareAttribute('{self.id}', '{self.price}', "\
+               f"'{self.currency_type}', '{self.payment_method}', "\
+               f"'{self.transfers}', '{self.agency_code}',"\
+               f" '{self.transfer_duration}', "\
+               f"'{self.id_prefix}', '{self.fare_id}',"\
+               f" '{self.application_start}', '{self.application_end}',"\
+               f" '{self.registered_on}')>"
 
 
 class FareRule(Base):
     __tablename__ = 'fare_rules'
-    id                = Column(String(32), primary_key=True)
-    fare_code         = Column(String(32), ForeignKey('fare_attributes.id'), nullable=False)
-    route_code        = Column(String(32), nullable=True, index=True)
-    origin_code       = Column(String(32), nullable=True, index=True)
-    destination_code  = Column(String(32), nullable=True, index=True)
-    contains_code     = Column(String(32), nullable=True, index=True)
-    id_prefix         = Column(String(255), nullable=False, index=True)
-    registered_on     = Column(DateTime, nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    fare_code = Column(String(32), ForeignKey('fare_attributes.id'),
+                       nullable=False)
+    route_code = Column(String(32), nullable=True, index=True)
+    origin_code = Column(String(32), nullable=True, index=True)
+    destination_code = Column(String(32), nullable=True, index=True)
+    contains_code = Column(String(32), nullable=True, index=True)
+    id_prefix = Column(String(255), nullable=False, index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
     application_start = Column(DateTime, nullable=False, index=True)
-    application_end   = Column(DateTime, nullable=True, index=True)
-    fare_attribute    = relationship("FareAttribute", backref="fare_rule")
+    application_end = Column(DateTime, nullable=True, index=True)
+    fare_attribute = relationship("FareAttribute", backref="fare_rule")
 
-
-    def __init__(self, fare_code, route_code, origin_code, destination_code, contains_code, id_prefix, application_start, application_end=None):
+    def __init__(self, fare_code, route_code, origin_code, destination_code,
+                 contains_code, id_prefix,
+                 application_start, application_end=None):
         self.id = uuid.uuid4().hex
         self.fare_code = fare_code
         self.route_code = route_code
@@ -563,36 +635,41 @@ class FareRule(Base):
         self.application_end = application_end
 
     def __repr__(self):
-        return f"<FareRule('{self.id}', '{self.fare_code}', '{self.route_code}',"\
-                f" '{self.origin_code}', '{self.destination_code}',"\
-                f" '{self.contains_code}',"\
-                f" '{self.id_prefix}',"\
-                f" '{self.application_start}', '{self.application_end}', '{self.registered_on}')>"
+        return f"<FareRule('{self.id}', '{self.fare_code}',"\
+               f" '{self.route_code}',"\
+               f" '{self.origin_code}', '{self.destination_code}',"\
+               f" '{self.contains_code}',"\
+               f" '{self.id_prefix}',"\
+               f" '{self.application_start}', '{self.application_end}',"\
+               f" '{self.registered_on}')>"
 
 
 class StopTime(Base):
     __tablename__ = 'stop_times'
-    id                  = Column(String(32), primary_key=True)
-    trip_code           = Column(String(32), ForeignKey('trips.id'), nullable=False)
-    arrival_time        = Column(Integer, nullable=False, index=True)
-    departure_time      = Column(Integer, nullable=False, index=True)
-    tz                  = Column(String(255), index=True)
-    stop_code           = Column(String(32), ForeignKey('stop_positions.id'), nullable=False)
-    stop_sequence       = Column(Integer, nullable=False, index=True)
-    stop_headsign       = Column(Unicode(255), index=True)
-    pickup_type         = Column(Integer, server_default='0', nullable=False, index=True)
-    drop_off_type       = Column(Integer, server_default='0', nullable=False, index=True)
+    id = Column(String(32), primary_key=True)
+    trip_code = Column(String(32), ForeignKey('trips.id'), nullable=False)
+    arrival_time = Column(Integer, nullable=False, index=True)
+    departure_time = Column(Integer, nullable=False, index=True)
+    tz = Column(String(255), index=True)
+    stop_code = Column(String(32), ForeignKey('stop_positions.id'),
+                       nullable=False)
+    stop_sequence = Column(Integer, nullable=False, index=True)
+    stop_headsign = Column(Unicode(255), index=True)
+    pickup_type = Column(Integer, server_default='0',
+                         nullable=False, index=True)
+    drop_off_type = Column(Integer, server_default='0',
+                           nullable=False, index=True)
     shape_dist_traveled = Column(String(32), index=True)
-    id_prefix           = Column(String(255), index=True)
-    registered_on       = Column(DateTime, nullable=False, index=True)
+    id_prefix = Column(String(255), index=True)
+    registered_on = Column(DateTime, nullable=False, index=True)
 
     position = relationship("StopPosition", backref="stop_time")
     trip = relationship("Trip", backref="stop_time")
 
     def __init__(self, trip_code,
-            arrival_time, departure_time, tz,
-            stop_code, stop_sequence, stop_headsign,
-            pickup_type, drop_off_type, shape_dist_traveled, id_prefix):
+                 arrival_time, departure_time, tz,
+                 stop_code, stop_sequence, stop_headsign,
+                 pickup_type, drop_off_type, shape_dist_traveled, id_prefix):
         self.id = uuid.uuid4().hex
         self.trip_code = trip_code
         if arrival_time.isdigit():
@@ -626,4 +703,5 @@ class StopTime(Base):
         self.registered_on = datetime.utcnow()
 
     def __repr__(self):
-        return f"<StopTime('{self.id}', '{self.trip_code}', '{self.stop_code}', '{self.stop_sequence}')>"
+        return f"<StopTime('{self.id}', '{self.trip_code}', "\
+               f"'{self.stop_code}', '{self.stop_sequence}')>"

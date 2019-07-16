@@ -72,7 +72,7 @@
 												運賃: {{fare[(stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id)].fare_attribute.price}}円
 											{% endif %}
 											所要時間: 約{{(stop_time.to.arrival_time - stop_time.from.departure_time)//60}}分
-											<a role="button" data-modaal-animation="fade" class="modaal-ajax btn btn-default btn-sm" href="/passing_times/{{stop_time.from.trip.id}}?origin={{stop_time.from.stop_sequence}}&destination={{stop_time.to.stop_sequence}}&datetime={{params.day}}T{{params.time}}%2B09:00">通過時刻</a>
+											<a role="button" data-modaal-type="ajax" data-modaal-animation="fade" class="modaal-ajax btn btn-default btn-sm" href="/passing_times/{{stop_time.from.trip.id}}?origin={{stop_time.from.stop_sequence}}&destination={{stop_time.to.stop_sequence}}&datetime={{params.day}}T{{params.time}}%2B09:00">通過時刻</a>
 									</div>
 								</div>
 								<div>
