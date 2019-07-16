@@ -31,12 +31,12 @@
 							<div>
 								<div>
 									<time>{{ to_hhmmss(stop_time.from.departure_time) }}</time>
-									{% if stop_time.from.position.stop.name[0].code %}
-										[{{ stop_time.from.position.stop.name[0].code }}]
+									{% if stop_time.from.position.stop.now_name().code %}
+										[{{ stop_time.from.position.stop.now_name().code }}]
 									{% endif %}
-									{{ stop_time.from.position.stop.name[0].name }}
-									{% if stop_time.from.position.stop.name[0].desc %}
-										({{ stop_time.from.position.stop.name[0].desc }})
+									{{ stop_time.from.position.stop.now_name().name }}
+									{% if stop_time.from.position.stop.now_name().desc %}
+										({{ stop_time.from.position.stop.now_name().desc }})
 									{% endif %}
 									{% if stop_time.from.position %}
 										（乗車位置:
@@ -72,17 +72,17 @@
 												運賃: {{fare[(stop_time.from.trip.route.id, stop_time.from.position.id, stop_time.to.position.id)].fare_attribute.price}}円
 											{% endif %}
 											所要時間: 約{{(stop_time.to.arrival_time - stop_time.from.departure_time)//60}}分
-											<a role="button" data-modaal-animation="fade" class="modaal-ajax btn btn-default btn-sm" href="/passing_times/{{stop_time.from.trip.id}}/?origin={{stop_time.from.stop_sequence}}&destination={{stop_time.to.stop_sequence}}">通過時刻</a>
+											<a role="button" data-modaal-animation="fade" class="modaal-ajax btn btn-default btn-sm" href="/passing_times/{{stop_time.from.trip.id}}?origin={{stop_time.from.stop_sequence}}&destination={{stop_time.to.stop_sequence}}&datetime={{params.day}}T{{params.time}}%2B09:00">通過時刻</a>
 									</div>
 								</div>
 								<div>
 									<time>{{ to_hhmmss(stop_time.to.arrival_time) }}</time>
-									{% if stop_time.to.position.stop.name[0].code %}
-										[{{ stop_time.to.position.stop.name[0].code }}]
+									{% if stop_time.to.position.stop.now_name().code %}
+										[{{ stop_time.to.position.stop.now_name().code }}]
 									{% endif %}
-									{{ stop_time.to.position.stop.name[0].name }}
-									{% if stop_time.to.position.stop.name[0].desc %}
-										({{ stop_time.to.position.stop.name[0].desc }})
+									{{ stop_time.to.position.stop.now_name().name }}
+									{% if stop_time.to.position.stop.now_name().desc %}
+										({{ stop_time.to.position.stop.now_name().desc }})
 									{% endif %}
 									{% if stop_time.to.position %}
 										（下車位置:
@@ -102,8 +102,11 @@
 									{% endif %}
 								</div>
 							</div>
-							<p class="text-muted"><small>乗車位置・下車位置は道路状況や運用上などの理由により変更になる場合や特定の便のみ異なる場合がありますので、予めご了承ください。
-									情報に間違いがありましたら、連絡をくださるようご協力のほどお願いします。</small></p>
+							<p class="text-muted">
+								<small>
+									道路状況や運用上などの理由により変更になる場合や特定の便のみ異なる場合がありますので、予めご了承ください。情報に誤りがありましたら、ご連絡をください。
+								</small>
+							</p>
 							<p>
 								{% if stop_time.from.trip.service_code == "2ed19e8dd96311e6be760242ac130002" %}
 								平日ダイヤ
