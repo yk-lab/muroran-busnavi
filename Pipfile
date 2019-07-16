@@ -21,6 +21,7 @@ SQLAlchemy = "*"
 numpy = "*"
 mysqlclient = "*"
 google-cloud-storage = "*"
+pendulum = "*"
 
 [requires]
 python_version = "3.7"

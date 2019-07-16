@@ -10,6 +10,7 @@ from bottle import TEMPLATE_PATH, jinja2_template as template
 from models import Page, db_init, Company, CompanyName, Stop, StopName, StopPosition, StopTime, ServiceID, Service, ServiceDate, Trip, FareRule
 from sqlalchemy import or_, desc, func
 from datetime import datetime, date, time, timedelta, timezone
+import pendulum
 from json_encoders import StopJSONEncoder
 import json
 import markdown
@@ -301,7 +302,6 @@ def stop_times(db):
             FareRule.origin_code.in_(f_stop_positions),
             FareRule.destination_code.in_(t_stop_positions)
         ).all()}
-        logger.info(fare)
         return template('stop_times/list.tpl.html', stop_times=stop_times, fare=fare, params=request.params, autoescape=True)
     elif not request.params.from_q or not request.params.to_q:
       response.status = 302
@@ -331,6 +331,38 @@ def stop_times(db):
         stopnames = db.query(StopName).filter(StopName.name.contains(request.params.from_q)).order_by(func.char_length(StopName.name))
         return template('stop_times/select_stop.tpl.html', params = request.params, select="f_id", stopnames=stopnames, request=request, autoescape=True)
     return "False"
+
+@app.get('/passing_times/:trip_id')
+def passing_times(trip_id, db):
+    dt = None
+    try:
+        dt = pendulum.parse(request.params.datetime)
+    except Exception as e:
+        pass
+    dt = dt if dt != None else pendulum.now()
+
+    origin = int(request.params.origin) if request.params.origin and request.params.origin.isdigit() else 0
+    if request.params.destination and request.params.destination.isdigit():
+        destination = int(request.params.destination)
+        stop_times = db.query(StopTime).filter(StopTime.trip_code == trip_id, StopTime.stop_sequence >= origin, StopTime.stop_sequence <= destination)
+    else:
+        stop_times = db.query(StopTime).filter(StopTime.trip_code == trip_id, StopTime.stop_sequence >= origin)
+    stop_times = stop_times.order_by(StopTime.stop_sequence).all()
+    destination = stop_times[-1].stop_sequence if len(stop_times) > 0 else 0
+
+    fare = {i.destination_code: i for i in db.query(FareRule).filter(
+        FareRule.application_start <= dt.in_tz("UTC"),
+        or_(
+            FareRule.application_end == None,
+            FareRule.application_end >= dt.in_tz("UTC")
+        ),
+        FareRule.route_code == db.query(Trip).get(trip_id).route_code,
+        FareRule.origin_code == stop_times[0].stop_code,
+        FareRule.destination_code.in_([stop_time.stop_code for stop_time in stop_times])
+    ).all()}
+
+    return template('passing_times/modaal.html.j2', stop_times=stop_times, fare=fare, datetime=dt, origin=origin, destination=destination, now=pendulum.now(), autoescape=True)
+
 
 # Routing /feedback
 @app.post('/feedback/')
@@ -495,8 +527,9 @@ def api_v1_0_stop_search(db):
         {"message": "Bad Request"}
     ]})
 
-if app.config.get('RELOAD', False):
-    logger.debug("Reload: true")
-app.run(host='0.0.0.0', port=80, reload=app.config.get('RELOAD', False), reloader=app.config.get('RELOAD', False))
-#else:
-#    app.run(host='0.0.0.0', port=8080)
+if __name__ == "__main__":
+    if app.config.get('RELOAD', False):
+        logger.debug("Reload: true")
+    app.run(host='0.0.0.0', port=80, reload=app.config.get('RELOAD', False), reloader=app.config.get('RELOAD', False))
+    #else:
+    #    app.run(host='0.0.0.0', port=8080)

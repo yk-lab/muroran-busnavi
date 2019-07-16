@@ -3,11 +3,12 @@ const webpack = require('webpack');
 module.exports = {
   // モード値を production に設定すると最適化された状態で、
   // development に設定するとソースマップ有効でJSファイルが出力される
-  mode: "development",
+  mode: "production",
   entry: {
     main: "./static/src/main.ts",
     stop_times: "./static/src/stop_times.ts",
-    stop_search: "./static/src/stop_search.tsx"
+    stop_search: "./static/src/stop_search.tsx",
+    passing_times: "./static/src/passing_times.tsx"
   },  // ファイルの出力設定
   output: {
     //  出力ファイルのディレクトリ名

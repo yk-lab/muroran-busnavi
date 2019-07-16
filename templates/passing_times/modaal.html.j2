@@ -1,0 +1,40 @@
+{%- macro to_hhmmss(t) -%}
+{%- set ss = (t % 60) | int %}
+{%- set mm = (((t-ss)/60) % 60) | int -%}
+{%- set hh = ((t-mm*60-ss)/3600) | int -%}
+{{- "%d:%02d"|format(hh, mm) }}
+{%- endmacro -%}
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <div class="passing_times_modaal">
+    <ul class="passing_times_modaal">
+    {%- for stop_time in stop_times -%}
+      <li>
+        {{- stop_time.position.stop.now_name().name}}: {{to_hhmmss(stop_time.departure_time) -}}
+        {%- if fare.get(stop_time.stop_code) -%}
+        ({{- fare[stop_time.stop_code].fare_attribute.price -}}円)
+        {%- endif -%}
+        {%- if stop_time.stop_sequence == origin -%}
+        <a href="/stops/{{stop_time.position.stop.id}}?from={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        {%- elif stop_time.stop_sequence == destination -%}
+        <a href="/stops/{{stop_time.position.stop.id}}?to={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        {%- else -%}
+        <a href="/stops/{{stop_time.position.stop.id}}?pass={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        {%- endif -%}
+      </li>
+    {%- else -%}
+    <li><em>Error: No match stop times!</em></li>
+    {%- endfor -%}
+    </ul>
+    <p class="passing_times_modaal_muted">
+      運賃は<span>{{- now.in_tz("Asia/Tokyo").format('YYYY/MM/DD HH:mm') -}}</span>現在の情報による <span>{{- datetime.in_tz("Asia/Tokyo").format('YYYY/MM/DD HH:mm') -}}</span>に適用される運賃です。
+    </p>
+  </div>
+  <script type="text/javascript" src="/static/dist/passing_times.js" async></script>
+</body>
+</html>
