@@ -6,20 +6,25 @@ div.passing_times_modaal {
     list-style: none;
     line-height: 1.8;
 
-    li:before {
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      content: "\f3c5";
-      padding-right: 5px;
-    }
+    li {
+      &:before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        content: "\f3c5";
+        padding-right: 5px;
+      }
 
-    li.boarding_only:before {
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      content: "\f078";
-      padding-right: 5px;
-    }
+      &.boarding_only:before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        content: "\f078";
+        padding-right: 5px;
+      }
 
+      span {
+        margin-left: 0.5em;
+      }
+    }
   }
 
   p.passing_times_modaal_muted {

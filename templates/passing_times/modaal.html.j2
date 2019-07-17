@@ -20,11 +20,11 @@
         ({{- fare[stop_time.stop_code].fare_attribute.price -}}円)
         {%- endif -%}
         {%- if stop_time.stop_sequence == origin -%}
-        <a href="/stops/{{stop_time.position.stop.id}}?from={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        <span><a href="/stops/{{stop_time.position.stop.id}}?from={{stop_time.position.id}}" target="_blank"><i class="fas fa-map-marked-alt"></i>地図</a></span>
         {%- elif stop_time.stop_sequence == destination -%}
-        <a href="/stops/{{stop_time.position.stop.id}}?to={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        <span><a href="/stops/{{stop_time.position.stop.id}}?to={{stop_time.position.id}}" target="_blank"><i class="fas fa-map-marked-alt"></i>地図</a></span>
         {%- else -%}
-        <a href="/stops/{{stop_time.position.stop.id}}?pass={{stop_time.position.id}}" target="_blank">&lt;地図で確認&gt;</a>
+        <span><a href="/stops/{{stop_time.position.stop.id}}?pass={{stop_time.position.id}}" target="_blank"><i class="fas fa-map-marked-alt"></i>地図</a></span>
         {%- endif -%}
       </li>
     {%- else -%}
