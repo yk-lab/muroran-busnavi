@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+from enum import Enum
 from logging import basicConfig, getLogger, DEBUG, INFO
 import bottle
 from bottle import HTTPError
@@ -18,8 +19,12 @@ from models import (
     ServiceDate,
     Trip,
     FareRule,
+    StopTimeSchema,
+    DepartureArrivalSchema,
+    FareRuleSchema,
 )
 from sqlalchemy import or_, func
+from sqlalchemy.orm import aliased
 from datetime import datetime, date, time, timedelta, timezone
 import pendulum
 import json
@@ -34,6 +39,7 @@ import pymongo
 from quadkey import QuadkeyUtils
 from lat_lng import dist_on_sphere
 from slacker import Slacker
+from handler.helper import parse_param_date_time
 
 # Imports the Google Cloud client library
 from google.cloud import storage
@@ -77,6 +83,18 @@ BaseTemplate.settings.update(
 
 UTC = timezone(timedelta(hours=+0), "UTC")
 JST = timezone(timedelta(hours=+9), "JST")
+
+
+class ServiceWeekdayEnum(Enum):
+    # monday, tuesday, wednesday, thursday, friday, saturday, sunday
+    monday = 0
+    tuesday = 1
+    wednesday = 2
+    thursday = 3
+    friday = 4
+    saturday = 5
+    sunday = 6
+
 
 # static files
 @app.route("/static/<filename:path>")
@@ -426,7 +444,7 @@ def stop_times(db):
             .filter(
                 FareRule.application_start <= dt.astimezone(UTC),
                 or_(
-                    FareRule.application_end is None,
+                    FareRule.application_end == None,  # noqa: E711
                     FareRule.application_end >= dt.astimezone(UTC),
                 ),
                 FareRule.origin_code.in_(f_stop_positions),
@@ -531,7 +549,7 @@ def passing_times(trip_id, db):
         .filter(
             FareRule.application_start <= dt.in_tz("UTC"),
             or_(
-                FareRule.application_end is None,
+                FareRule.application_end == None,  # noqa: E711
                 FareRule.application_end >= dt.in_tz("UTC"),
             ),
             FareRule.route_code == db.query(Trip).get(trip_id).route_code,
@@ -682,6 +700,243 @@ def admin_stop_list():
 @app.route("/admin/stop/add/")
 def admin_stop_add():
     return HTTPError(404, "page not found.")
+
+
+@app.route("/api/1/srops/:id")
+def api_1_stop(id, db):
+    stop = db.query(Stop).get(id)
+    lat = sum([sp.lat for sp in stop.positions if sp.availability]) / len(
+        [sp.lat for sp in stop.positions if sp.availability]
+    )
+    lng = sum([sp.lng for sp in stop.positions if sp.availability]) / len(
+        [sp.lng for sp in stop.positions if sp.availability]
+    )
+    dl = QuadkeyUtils.search_LoD_lat(500, float(lat))
+    quadkey = mercantile.quadkey(*mercantile.tile(float(lng), float(lat), dl))
+
+    quadkeys = QuadkeyUtils.neighbors_quadkey(
+        mercantile.quadkey_to_tile(QuadkeyUtils.cut_key(quadkey, dl))
+    )
+
+    neighbor_stops = db.query(Stop).filter(
+        Stop.id.in_(
+            db.query(StopPosition.stop_code).filter(
+                or_(
+                    StopPosition.quadkey.startswith(quadkeys[0]),
+                    StopPosition.quadkey.startswith(quadkeys[1]),
+                    StopPosition.quadkey.startswith(quadkeys[2]),
+                    StopPosition.quadkey.startswith(quadkeys[3]),
+                    StopPosition.quadkey.startswith(quadkeys[4]),
+                    StopPosition.quadkey.startswith(quadkeys[5]),
+                    StopPosition.quadkey.startswith(quadkeys[6]),
+                    StopPosition.quadkey.startswith(quadkeys[7]),
+                    StopPosition.quadkey.startswith(quadkeys[8]),
+                )
+            )
+        )
+    )
+
+    n_stops = []
+    for ns in neighbor_stops.all():
+        if ns.id != stop.id:
+            a_lat = sum(
+                [sp.lat for sp in ns.positions if sp.availability]
+            ) / len([sp.lat for sp in ns.positions if sp.availability])
+            a_lng = sum(
+                [sp.lng for sp in ns.positions if sp.availability]
+            ) / len([sp.lng for sp in ns.positions if sp.availability])
+            dist = dist_on_sphere((lat, lng), (a_lat, a_lng))
+            if dist <= 0.500:
+                n_stops.append(
+                    {"stop": ns, "dist": int(round(dist * 1000, -1))}
+                )
+        if n_stops:
+            n_stops.sort(key=lambda x: x["dist"])
+
+    # logger.debug("stops: %s" % neighbor_stops.all())
+
+    if format == "json":
+        return "todo"
+    return template(
+        "stop/details.tpl.html",
+        page={"title": stop.now_name().name + " - 駅・停留所 - むろらんバスなび"},
+        stop=stop,
+        neighbor_stops=n_stops,
+        autoescape=True,
+    )
+
+
+@app.route("/api/1/stop_names")
+def api_1_search_stop_by_name(db):
+    response.content_type = "application/json"
+    stopnames = (
+        db.query(StopName)
+        .filter(StopName.name.contains(request.params.query))
+        .order_by(func.char_length(StopName.name))
+    )
+    return template(
+        "api/1/search_stop_by_name.json.j2",
+        stopnames=stopnames,
+        autoescape=True,
+    )
+
+
+@app.route("/api/1/stoptimes")
+def api_1_stoptimes(db):
+    from_busstop_name = db.query(StopName).get(request.params.from_busstop)
+    to_busstop_name = db.query(StopName).get(request.params.to_busstop)
+    logger.debug(
+        f"from_busstop_name: {from_busstop_name}/{request.params.from_busstop}"
+    )  # noqa: E501
+    logger.debug(
+        f"to_busstop_name: {to_busstop_name}/{request.params.to_busstop}"
+    )  # noqa: E501
+
+    dt = parse_param_date_time()
+    time_sec = dt.hour * 3600 + dt.minute * 60
+
+    # monday, tuesday, wednesday, thursday, friday, saturday, sunday
+    a_service_dates = db.query(ServiceDate).filter(
+        ServiceDate.date == dt.date()
+    )
+    logger.debug(a_service_dates.statement)
+    a_service_dates = a_service_dates.all()
+    logger.debug(a_service_dates)
+
+    a_service_weekday = db.query(Service.service_code).filter(
+        Service.__dict__.get(ServiceWeekdayEnum(dt.weekday()).name) == 1,
+        Service.start_date <= dt.in_timezone("UTC"),
+        Service.end_date >= dt.in_timezone("UTC"),
+    )
+    logger.debug(a_service_weekday.statement)
+    a_service_weekday = a_service_weekday.all()
+    logger.debug(a_service_weekday)
+
+    service_codes = {w[0]: True for w in a_service_weekday}
+    logger.debug(service_codes)
+    for s in a_service_dates:
+        if s.exception_type == 2:
+            service_codes[s.service_code] = False
+        elif s.exception_type == 1:
+            service_codes[s.service_code] = True
+    service_codes = [k for k, s in service_codes.items() if s]
+    logger.debug(service_codes)
+
+    trips = db.query(Trip.id).filter(Trip.service_code.in_(service_codes))
+
+    f_stop_positions = db.query(StopPosition.id).filter(
+        StopPosition.stop_code == from_busstop_name.stop_code,
+        StopPosition.application_start <= dt.in_timezone("UTC"),
+        or_(
+            StopPosition.application_end >= dt.in_timezone("UTC"),
+            StopPosition.application_end == None,  # noqa: E711
+        ),
+    )
+    t_stop_positions = db.query(StopPosition.id).filter(
+        StopPosition.stop_code == to_busstop_name.stop_code,
+        StopPosition.application_start <= dt.in_timezone("UTC"),
+        or_(
+            StopPosition.application_end >= dt.in_timezone("UTC"),
+            StopPosition.application_end == None,  # noqa: E711
+        ),
+    )
+
+    f_stop_times = aliased(StopTime, name="f_stop_times")
+    t_stop_times = aliased(StopTime, name="t_stop_times")
+
+    times = (
+        db.query(f_stop_times, t_stop_times)
+        .filter(
+            f_stop_times.trip_code == t_stop_times.trip_code,
+            f_stop_times.stop_sequence < t_stop_times.stop_sequence,
+            f_stop_times.departure_time > time_sec,
+            f_stop_times.stop_code.in_(f_stop_positions),
+            t_stop_times.stop_code.in_(t_stop_positions),
+            f_stop_times.trip_code.in_(trips),
+            t_stop_times.trip_code.in_(trips),
+        )
+        .order_by(t_stop_times.arrival_time)
+        .limit(20)
+    )
+
+    logger.debug(times.statement)
+    times = times.all()
+    times = [dict(zip(["departure", "arrival"], list(temp))) for temp in times]
+    logger.debug(times)
+
+    fare_rule_schema = FareRuleSchema()
+    fare = {
+        f"{i.route_code}/{i.origin_code}/{i.destination_code}": fare_rule_schema.dump(  # noqa: E501
+            i
+        ).data  # noqa: E501
+        for i in db.query(FareRule)
+        .filter(
+            FareRule.application_start <= dt.in_timezone("UTC"),
+            or_(
+                FareRule.application_end == None,  # noqa: E711
+                FareRule.application_end >= dt.in_timezone("UTC"),
+            ),
+            FareRule.origin_code.in_(f_stop_positions),
+            FareRule.destination_code.in_(t_stop_positions),
+        )
+        .all()
+    }
+    logger.debug(fare)
+
+    response.content_type = "application/json"
+    data = {
+        "times": DepartureArrivalSchema(many=True).dump(times).data,
+        "fare": fare,
+    }
+    logger.debug(data)
+    return json.dumps(data)
+
+
+@app.get("/api/1/passing_times")
+def api_1_passing_times(db):
+    origin = request.params.origin
+    destination = request.params.destination
+    trip_id = request.params.trip
+
+    dt = parse_param_date_time()
+
+    stop_times = (
+        db.query(StopTime)
+        .filter(
+            StopTime.trip_code == trip_id,
+            StopTime.stop_sequence >= origin,
+            StopTime.stop_sequence <= destination,
+        )
+        .order_by(StopTime.stop_sequence)
+        .all()
+    )
+
+    fare_rule_schema = FareRuleSchema()
+    fare = {
+        i.destination_code: fare_rule_schema.dump(i).data
+        for i in db.query(FareRule)
+        .filter(
+            FareRule.application_start <= dt.in_tz("UTC"),
+            or_(
+                FareRule.application_end == None,  # noqa: E711
+                FareRule.application_end >= dt.in_tz("UTC"),
+            ),
+            FareRule.route_code == db.query(Trip).get(trip_id).route_code,
+            FareRule.origin_code == stop_times[0].stop_code,
+            FareRule.destination_code.in_(
+                [stop_time.stop_code for stop_time in stop_times]
+            ),
+        )
+        .all()
+    }
+
+    response.content_type = "application/json"
+    return json.dumps(
+        {
+            "times": StopTimeSchema(many=True).dump(stop_times).data,
+            "fare": fare,
+        }
+    )
 
 
 @app.route("/api/v1.0/stop_search")

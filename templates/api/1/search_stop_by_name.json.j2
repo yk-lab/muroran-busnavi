@@ -1,0 +1,17 @@
+{
+    "result": {
+        "stops": [
+            {% for stopname in stopnames %}
+            {
+                "id": {{ stopname.id|tojson }},
+                "stop_code": {{ stopname.stop_code|tojson }},
+                "name": {{ stopname.name|tojson }},
+                "now_name": {{ stopname.stop.now_name().name|tojson }}
+            }
+            {%- if not loop.last -%}
+            ,
+            {%- endif %}
+            {% endfor %}
+        ]
+    }
+}
