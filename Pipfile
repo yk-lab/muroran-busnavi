@@ -25,6 +25,7 @@ mysqlclient = "*"
 google-cloud-storage = "*"
 pendulum = "*"
 pre-commit = "*"
+marshmallow-sqlalchemy = "*"
 
 [requires]
 python_version = "3.7"
