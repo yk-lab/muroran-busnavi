@@ -1,0 +1,7 @@
+client/dist/
+node_modules/
+.git/
+__pycache__/
+bus-navi-*.json
+config.json
+muroran-bus-navi/static/dist
