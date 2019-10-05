@@ -1,0 +1,40 @@
+{
+    "query": {{ query|tojson }},
+    "result": {
+        "stops": [
+            {% for stop in stops %}
+            {
+                {% if stop.dist is defined %}
+                "dist": {{ stop.dist|tojson }},
+                {%- endif %}
+                "stop_id": {{ stop.stop_data.id|tojson }},
+                "stop_name": {{ stop.stop_data.now_name().name|tojson }},
+                "stop_code": {{ stop.stop_data.now_name().code|tojson }},
+                "stop_desc": {{ stop.stop_data.now_name().desc|tojson }},
+                "positions": [
+                {% set vars = {'flag': False} %}
+                {%- for sp in stop.stop_data.positions %}
+                    {%- if vars.flag -%}
+                    ,
+                    {%- endif %}
+                    {%- if sp.availability %}
+                    {%- if vars.update({'flag': True}) %}{%- endif %}
+                    {
+                        "id": {{ sp.id|tojson }},
+                        "lat": {{ sp.lat|float|tojson }},
+                        "lng": {{ sp.lng|float|tojson }},
+                        "code": {{ sp.code|tojson }},
+                        "subname": {{ sp.subname|tojson }},
+                        "desc": {{ sp.desc|tojson }}
+                    }
+                    {%- endif %}
+                {%- endfor %}
+                ]
+            }
+            {%- if not loop.last -%}
+            ,
+            {%- endif %}
+            {% endfor %}
+        ]
+    }
+}

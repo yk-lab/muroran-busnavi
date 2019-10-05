@@ -1,0 +1,57 @@
+{% extends "layout.tpl.html" %}
+{% block head_scripts %}
+  {# <script type="text/javascript" src="/static/js/stop_search.js"></script> #}
+{% endblock %}
+{% block page_id -%}
+Stops SelectStop
+{%- endblock %}
+{% block content %}
+  <section class="container">
+    <div class="page-header">
+      <h1 style="display:inline">バス停検索</h1>
+      <form action="/stops/search/" method="get" class="pull-right">
+        <div class="form-inline">
+          <div class="form-group text-center">
+            <div class="input-group">
+              <span class="input-group-addon">
+                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+              </span>
+              <input type="text" name="q" value="{{ query }}" class="form-control" autocomplete="on" list="stop_candidate"/>
+              <datalist id="stop_candidate">
+              </datalist>
+            </div>
+            <button type="submit" class="btn btn-default">検索</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+  <section class="section section-default">
+  	<div class="container">
+  		<div class="row">
+  			<div class="col-xs-12">
+          <ul class="stop-list select-stop list-group">
+            {% for stopname in stopnames %}
+              <li class="list-group-item" data-mbn-stop_id="{{ stopname.stop.id }}" data-mbn-stop_name="{{ stopname.stop.now_name().name }}">
+                <a href="/stops/{{ stopname.stop.id }}">
+                  <div class="panel-body">
+                    {% if stopname.name != stopname.stop.now_name().name %}
+                      <p>旧名 {{ stopname.name }} でヒットしました</p>
+                    {% endif %}
+                    {% if stopname.stop.now_name() %}
+                      {{ stopname.stop.now_name().name }}
+                    {% else %}
+                      <em>すでに廃止されています</em>
+                    {% endif %}
+                  </div>
+                </a>
+              </li>
+            {% else %}
+              <li><em>no stop found</em></li>
+            {% endfor %}
+          </ul>
+        </div>
+  		</div>
+  	</div>
+  </section>
+{% endblock %}

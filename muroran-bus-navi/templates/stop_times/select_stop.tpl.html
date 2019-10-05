@@ -1,0 +1,43 @@
+{% extends "stop_times/base.tpl.html" %}
+{% block head_scripts %}
+{% endblock %}
+{% block page_id -%}
+StopTimes SelectStop
+{%- endblock %}
+{% block content %}
+  {{ super() }}
+  <section class="section section-default">
+  	<div class="container">
+        {% if select is defined and select == "f_id" %}
+        <h2>乗車地を選択</h2>
+        {% elif select is defined and select == "t_id" %}
+        <h2>下車地を選択</h2>
+        {% endif %}
+  		<div class="row">
+  			<div class="col-xs-12">
+          <ul class="stop-list select-stop list-group">
+            {% for stopname in stopnames %}
+            <li class="list-group-item" data-mbn-stop_id="{{ stopname.stop.id }}" data-mbn-stop_name="{{ stopname.stop.now_name().name }}">
+                <a href="{{ request.urlparts.scheme }}://{{ request.urlparts.netloc }}{{ request.urlparts.path }}?{{ request.query_string }}&{{ select }}={{ stopname.stop.id }}">
+                  <div class="panel-body">
+                    {% if stopname.name != stopname.stop.now_name().name %}
+                      <p>旧名 {{ stopname.name }} でヒットしました</p>
+                    {% endif %}
+                    {% if stopname.stop.now_name() %}
+                      {{ stopname.stop.now_name().name }}
+                    {% else %}
+                      <em>すでに廃止されています</em>
+                    {% endif %}
+                  </div>
+                </a>
+                <a href="/stops/{{ stopname.stop.id }}">→地図で確認</a>
+              </li>
+            {% else %}
+              <li><em>no stop found</em></li>
+            {% endfor %}
+          </ul>
+        </div>
+  		</div>
+  	</div>
+  </section>
+{% endblock %}
