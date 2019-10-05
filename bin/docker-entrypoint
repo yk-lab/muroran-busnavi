@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+server() {
+  exec python3 muroran-bus-navi/app.py
+}
+
+case "$1" in
+  server)
+    shift
+    server
+    ;;
+esac
