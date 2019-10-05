@@ -1,17 +1,12 @@
-# build
-FROM node:11 as build-env
-COPY . /app
-WORKDIR /app
-RUN yarn && yarn webpack
+FROM node:12 as build-vuejs
+WORKDIR /frontend
+COPY package.json yarn.lock /frontend/
+COPY babel.config.js /frontend/
+COPY client /frontend/client
+RUN yarn --dev && yarn build
 
 FROM kennethreitz/pipenv
-ENV PORT '80'
-COPY --from=build-env /app/pages /app/pages
-COPY --from=build-env /app/static/dist /app/static/dist
-COPY --from=build-env /app/static/font /app/static/font
-COPY --from=build-env /app/static/img /app/static/img
-COPY --from=build-env /app/templates /app/templates
-COPY --from=build-env /app/*.py /app/
-COPY --from=build-env /app/Pipfile* /app/
-CMD python3 app.py
-EXPOSE 80
+COPY . /app
+COPY --from=build-vuejs /frontend/client/dist /app/client/dist
+ENTRYPOINT ["/app/bin/docker-entrypoint"]
+CMD ["server"]
