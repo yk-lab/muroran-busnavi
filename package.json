@@ -1,44 +1,63 @@
 {
-  "name": "bus-navi",
-  "version": "1.0.0",
-  "description": "むろらんバスなび",
-  "main": "index.js",
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.9.0",
-    "@ivoviz/feedback.js": "^1.0.0-alpha.1",
-    "@types/backbone": "^1.4.0",
-    "@types/react": "^16.8.17",
-    "@types/react-dom": "^16.8.4",
     "axios": "^0.19.0",
-    "backbone": "^1.4.0",
-    "jquery": "^3.4.1",
-    "load-google-maps-api": "^2.0.0",
-    "modaal": "^0.4.4",
-    "popper.js": "^1.15.0",
-    "react": "^16.8.6",
-    "typescript": "^3.4.5"
+    "core-js": "^2.6.5",
+    "leaflet": "^1.5.1",
+    "moment": "^2.24.0",
+    "moment-locales-webpack-plugin": "^1.1.0",
+    "vue": "^2.6.10",
+    "vue-content-loader": "^0.2.2",
+    "vue2-leaflet": "^2.2.1",
+    "vuetify": "^2.0.5"
   },
   "devDependencies": {
-    "bootstrap": "^3.3.7-2",
-    "bootstrap-rin": "^3.3.7-2",
-    "css-loader": "^3.0.0",
-    "file-loader": "^4.0.0",
-    "less": "^3.9.0",
-    "less-loader": "^5.0.0",
+    "@mdi/font": "^3.9.97",
+    "@vue/cli-plugin-babel": "^3.10.0",
+    "@vue/cli-plugin-eslint": "^3.10.0",
+    "@vue/cli-service": "^3.10.0",
+    "babel-eslint": "^10.0.1",
+    "babel-polyfill": "^6.26.0",
+    "deepmerge": "^4.0.0",
+    "eslint": "^5.16.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "fibers": "^4.0.1",
     "node-sass": "^4.12.0",
-    "sass-loader": "^7.1.0",
-    "style-loader": "^0.23.1",
-    "ts-loader": "^6.0.0",
-    "webpack": "^4.31.0",
-    "webpack-cli": "^3.3.2"
+    "sass": "^1.22.9",
+    "sass-loader": "^7.2.0",
+    "vue-cli-plugin-notifier": "^1.0.0",
+    "vue-router": "^3.1.2",
+    "vue-template-compiler": "^2.6.10",
+    "vuetify-loader": "^1.2.2"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "rules": {},
+    "parserOptions": {
+      "parser": "babel-eslint"
+    }
   },
-  "repository": {
-    "type": "git",
-    "url": "ssh://git@gitlab2.yk-lab.net:2222/MuroranBusNavi/WebRenewal.git"
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
   },
-  "author": "",
-  "license": "ISC"
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
 }
