@@ -15,9 +15,14 @@
             <v-text-field v-model="date" label="日付" prepend-icon="mdi-calendar-month" readonly v-on="on"></v-text-field>
           </v-flex>
         </template>
-        <v-date-picker v-model="date" scrollable>
+        <v-date-picker
+          v-model="date"
+          locale="jp-ja"
+          :day-format="date => new Date(date).getDate()"
+          scrollable
+        >
           <v-spacer></v-spacer>
-          <v-btn text color="primary" @click="modal1 = false">Cancel</v-btn>
+          <v-btn text color="primary" @click="modal1 = false">キャンセル</v-btn>
           <v-btn text color="primary" @click="$refs.dialog1.save(date)">OK</v-btn>
         </v-date-picker>
       </v-dialog>
@@ -29,7 +34,7 @@
         </template>
         <v-time-picker v-if="modal2" v-model="time" format="24hr" full-width scrollable>
           <v-spacer></v-spacer>
-          <v-btn text color="primary" @click="modal2 = false">Cancel</v-btn>
+          <v-btn text color="primary" @click="modal2 = false">キャンセル</v-btn>
           <v-btn text color="primary" @click="$refs.dialog2.save(time)">OK</v-btn>
         </v-time-picker>
       </v-dialog>
