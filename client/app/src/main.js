@@ -24,8 +24,16 @@ Icon.Default.mergeOptions({
 });
 
 Sentry.init({
+  environment: process.env.NODE_ENV,
   dsn: config.sentry.dsn,
   integrations: [new Integrations.Vue({Vue, attachProps: true, logErrors: true})],
+  beforeSend(event, hint) {
+    // Check if it is an exception, and if so, show the report dialog
+    if (event.exception) {
+      Sentry.showReportDialog({ eventId: event.event_id })
+    }
+    return event
+  }
 });
 
 const AsyncComponent = () => ({
