@@ -3,7 +3,7 @@
   :height="240"
   :width="400"
   :speed="2"
-  primaryColor="#f3f3f3"
+  primaryColor="#dde0e3"
   secondaryColor="#ecebeb"
 >
   <rect x="8" y="0" rx="0" ry="0" width="184" height="24" />
