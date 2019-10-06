@@ -13,6 +13,11 @@ module.exports = {
       .set("@", path.join(__dirname, "./client/app/src"))
   },
   configureWebpack: {
+    resolve: {
+      alias: {
+        config: path.resolve(`./client/app/src/configs/${process.env.NODE_ENV}.ts`),
+      }
+    },
     plugins: [
       new MomentLocalesPlugin({
         localesToKeep: ['es-us', 'ja'],
