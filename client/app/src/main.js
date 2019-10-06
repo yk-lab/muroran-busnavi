@@ -8,6 +8,11 @@ import LoadView from "@/components/LoadView"
 import { Icon }  from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+import * as Sentry from '@sentry/browser';
+import * as Integrations from '@sentry/integrations';
+
+import config from 'config';
+
 Vue.config.productionTip = false
 
 delete Icon.Default.prototype._getIconUrl;
@@ -16,6 +21,11 @@ Icon.Default.mergeOptions({
   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png')
+});
+
+Sentry.init({
+  dsn: config.sentry.dsn,
+  integrations: [new Integrations.Vue({Vue, attachProps: true, logErrors: true})],
 });
 
 const AsyncComponent = () => ({
