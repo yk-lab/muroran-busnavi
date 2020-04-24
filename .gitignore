@@ -1,3 +1,4 @@
 .venv/
 .env
+.coverage
 muroran_busnavi/db.sqlite3
