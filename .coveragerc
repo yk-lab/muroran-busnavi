@@ -1,0 +1,5 @@
+[run]
+omit = */tests/*,.venv/*
+
+[html]
+directory = cover
