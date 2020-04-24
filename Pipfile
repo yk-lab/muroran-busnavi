@@ -15,3 +15,7 @@ django-filter = "*"
 
 [requires]
 python_version = "3.8"
+
+[scripts]
+lint = "flake8 --show-source ."
+format = "autopep8 -ivr ."
